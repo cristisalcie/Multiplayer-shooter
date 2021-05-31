@@ -31,14 +31,7 @@ public class ChatWindow : MonoBehaviour
         Debug.Log(message);
     }
 
-    public void OnPlayerJoin(string message)
-    {
-        chatMessage.text = message;
-        OnSend(false);
-    }
-
-    // Called by UI element SendButton.OnClick
-    public void OnSend(bool isPlayerMsg)
+    public void OnSend()
     {
         if (chatMessage.text.Trim() == "")
             return;
@@ -47,7 +40,7 @@ public class ChatWindow : MonoBehaviour
         PlayerScript player = NetworkClient.connection.identity.GetComponent<PlayerScript>();
 
         // Send a message
-        player.CmdSendPlayerMessage(chatMessage.text.Trim(), isPlayerMsg);
+        player.CmdSendPlayerMessage(chatMessage.text.Trim());
 
         chatMessage.text = "";
     }

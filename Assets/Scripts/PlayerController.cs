@@ -15,7 +15,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         moveSpeed = 10f;
-        lookSensitivityH = 8f;
+        lookSensitivityH = 5f;
         lookSensitivityV = 5f;
 
         motor = GetComponent<PlayerMotor>();
@@ -31,17 +31,17 @@ public class PlayerController : MonoBehaviour
 
         Vector3 _velocity = (_movHorizontal + _movVertical).normalized * moveSpeed;
 
-        motor.Move(_velocity);
+        motor.CmdMove(_velocity);
 
         // Calculate rotation only to rotate player (not camera) on horizontal axis (turning around)
-        float _yRot = Input.GetAxis("Mouse X");
+        float _yRot = Input.GetAxisRaw("Mouse X");
         Vector3 _rotation = new Vector3(0f, _yRot, 0f) * lookSensitivityH;
-        motor.Rotate(_rotation);
+        motor.CmdRotate(_rotation);
     }
 
     public void MoveCamera()
     {
-        float _xRot = Input.GetAxis("Mouse Y") * lookSensitivityV;
-        motor.RotateCamera(_xRot);
+        float _xRot = Input.GetAxisRaw("Mouse Y") * lookSensitivityV;
+        motor.CmdRotateCamera(_xRot);
     }
 }

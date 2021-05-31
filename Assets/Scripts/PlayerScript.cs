@@ -3,6 +3,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 [RequireComponent(typeof(PlayerController))]
 [RequireComponent(typeof(PlayerShoot))]
 public class PlayerScript : NetworkBehaviour
@@ -10,8 +11,6 @@ public class PlayerScript : NetworkBehaviour
     private CanvasInGameHUD canvasInGameHUD;
 
     private SceneScript sceneScript;
-
-    public GameObject weaponHolder;
 
     private PlayerController playerController;
 
@@ -68,7 +67,7 @@ public class PlayerScript : NetworkBehaviour
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
 
         // Have weapons be affected by camera rotation (up and down)
-        weaponHolder.transform.SetParent(Camera.main.transform);
+        //weaponHolder.transform.SetParent(Camera.main.transform);
 
         // Lock cursor on window blocked in the center.
         Cursor.lockState = CursorLockMode.Locked;
@@ -85,10 +84,10 @@ public class PlayerScript : NetworkBehaviour
     }
 
     [Command]
-    public void CmdSendPlayerMessage(string message, bool isPlayerMsg)
+    public void CmdSendPlayerMessage(string message)
     {
         if (message.Trim() != "")
-            RpcReceive(message.Trim(), isPlayerMsg);
+            RpcReceive(message.Trim(), true);
     }
 
 
@@ -98,7 +97,7 @@ public class PlayerScript : NetworkBehaviour
         // Player info sent to server, then server updates sync vars which handles it on all clients
         playerName = _name;
         playerColor = _col;
-        canvasInGameHUD.chatWindow.GetComponent<ChatWindow>().OnPlayerJoin($"{playerName} joined.");
+        RpcReceive($"{playerName} joined.".Trim(), false);
     }
 
     
@@ -114,7 +113,6 @@ public class PlayerScript : NetworkBehaviour
         {
             // Make non-local players run this
             nameTag.transform.LookAt(Camera.main.transform);
-            nameTag.transform.Rotate(0.0f, 180.0f, 0.0f);
             return;
         }
         // If it is not paused(in options panel) & it had chat active & we clicked on screen 

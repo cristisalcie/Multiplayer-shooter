@@ -123,7 +123,7 @@ public class CanvasInGameHUD : MonoBehaviour
             }
             chatMessage.GetComponent<InputField>().DeactivateInputField();
             chatMessage.SetActive(false);
-            chatWindow.GetComponent<ChatWindow>().OnSend(true);
+            chatWindow.GetComponent<ChatWindow>().OnSend();
         }
     }
 }
