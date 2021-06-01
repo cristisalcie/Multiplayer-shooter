@@ -9,6 +9,10 @@ public class PlayerController : MonoBehaviour
     private float lookSensitivityH;
     [SerializeField]
     private float lookSensitivityV;
+    
+    [SerializeField]
+    private float jumpHeight;
+
 
     private PlayerMotor motor;
 
@@ -17,6 +21,8 @@ public class PlayerController : MonoBehaviour
         moveSpeed = 10f;
         lookSensitivityH = 5f;
         lookSensitivityV = 5f;
+
+        jumpHeight = 6000f;
 
         motor = GetComponent<PlayerMotor>();
     }
@@ -37,6 +43,12 @@ public class PlayerController : MonoBehaviour
         float _yRot = Input.GetAxisRaw("Mouse X");
         Vector3 _rotation = new Vector3(0f, _yRot, 0f) * lookSensitivityH;
         motor.CmdRotate(_rotation);
+
+        // Control jump
+        if (Input.GetButtonDown("Jump"))
+        {
+            motor.CmdJump(Vector3.up * jumpHeight);
+        }
     }
 
     public void MoveCamera()

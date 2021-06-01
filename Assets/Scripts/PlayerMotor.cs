@@ -13,6 +13,12 @@ public class PlayerMotor : NetworkBehaviour
     private float currentCameraRotationX = 0f;
     private float rotationMultiplier = 100f;
 
+    [SyncVar]
+    Vector3 jmp = Vector3.zero;
+    bool isGrounded = false;
+    int numberJumps = 0;
+    int maxJumps = 1;
+
     [SerializeField]
     private GameObject weaponsHolder;
     [SerializeField]
@@ -42,6 +48,12 @@ public class PlayerMotor : NetworkBehaviour
         cameraRotationX = _cameraRotationX;
     }
 
+    [Command]
+    public void CmdJump(Vector3 _jmp)
+    {
+        jmp = _jmp;
+    }
+
     void FixedUpdate()
     {
         PerformMovement();
@@ -53,6 +65,17 @@ public class PlayerMotor : NetworkBehaviour
         if (velocity != Vector3.zero)
         {
             rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+        }
+        if (numberJumps > maxJumps - 1)
+        {
+            isGrounded = false;
+        }
+        if (isGrounded && jmp != Vector3.zero)
+        {
+            Debug.Log("jumped");
+            rb.AddForce(jmp * Time.fixedDeltaTime, ForceMode.Impulse);
+            numberJumps += 1;
+            jmp = Vector3.zero;
         }
     }
 
@@ -76,5 +99,11 @@ public class PlayerMotor : NetworkBehaviour
             weaponsHolder.transform.localEulerAngles = _newRotation;
             
         }
+    }
+    void OnCollisionEnter(Collision other)
+    {
+            Debug.Log("grounded");
+        isGrounded = true;
+        numberJumps = 0;
     }
 }
