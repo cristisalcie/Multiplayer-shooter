@@ -57,6 +57,7 @@ public class PlayerMotor : NetworkBehaviour
     void FixedUpdate()
     {
         PerformMovement();
+        PerformJump();
         PerformRotation();
     }
 
@@ -66,13 +67,16 @@ public class PlayerMotor : NetworkBehaviour
         {
             rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
         }
+    }
+
+    void PerformJump()
+    {
         if (numberJumps > maxJumps - 1)
         {
             isGrounded = false;
         }
         if (isGrounded && jmp != Vector3.zero)
         {
-            Debug.Log("jumped");
             rb.AddForce(jmp * Time.fixedDeltaTime, ForceMode.Impulse);
             numberJumps += 1;
             jmp = Vector3.zero;
@@ -102,7 +106,6 @@ public class PlayerMotor : NetworkBehaviour
     }
     void OnCollisionEnter(Collision other)
     {
-            Debug.Log("grounded");
         isGrounded = true;
         numberJumps = 0;
     }
