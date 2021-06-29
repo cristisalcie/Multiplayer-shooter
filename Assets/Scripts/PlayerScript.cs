@@ -80,6 +80,8 @@ public class PlayerScript : NetworkBehaviour
         Color color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
         CmdSetupPlayer(name, color);
 
+        //GameManager.AddPlayer(playerName + netId, this);
+
         playerShoot.SetupPlayerShoot(sceneScript);
     }
 

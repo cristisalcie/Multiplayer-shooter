@@ -58,7 +58,6 @@ public class CanvasLobbyHUD : MonoBehaviour
     public void SetupCanvas()
     {
         // Here we will dump majority of the canvas UI that may be changed.
-
         if (!NetworkClient.isConnected && !NetworkServer.active)
         {
             if (NetworkClient.active)
