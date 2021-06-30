@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerControllerTest : MonoBehaviour
@@ -32,7 +30,7 @@ public class PlayerControllerTest : MonoBehaviour
     [SerializeField]
     private float cameraRotationXLimit;
 
-    private float currentCameraRotationX = 0f;
+    private float currentCameraRotationX;
     private float rotationMultiplier;
     private float xRot;
     private Vector3 rotation;
@@ -40,7 +38,7 @@ public class PlayerControllerTest : MonoBehaviour
     private void Awake()
     {
         charCtrl = GetComponent<CharacterController>();
-        moveSpeed = 6;
+        moveSpeed = 6f;
         gravity = 0f;
         gravityConstant = 1f;
         jumpConstant = 18f;
@@ -82,11 +80,11 @@ public class PlayerControllerTest : MonoBehaviour
 
             if (_movX != 0 || _movZ != 0) // Has moved
             {
-                Vector3 movHorizontal = transform.right * _movX;
-                Vector3 movVertical = transform.forward * _movZ;
+                Vector3 _movHorizontal = transform.right * _movX;
+                Vector3 _movVertical = transform.forward * _movZ;
 
                 // Calculate velocity and apply movement
-                Vector3 _velocity = (movHorizontal + movVertical).normalized * moveSpeed;
+                Vector3 _velocity = (_movHorizontal + _movVertical).normalized * moveSpeed;
                 inAirVelocity = _velocity;
                 charCtrl.Move(_velocity * Time.deltaTime);
             }
@@ -128,8 +126,8 @@ public class PlayerControllerTest : MonoBehaviour
             mustJump = false;
             isGrounded = false;
             gravity = jumpConstant * Time.deltaTime;
+            charCtrl.Move(Vector3.up * jumpConstant * Time.deltaTime);
         }
-        else
         {
             gravity = isGrounded ? 0f : (gravity - gravityConstant * Time.deltaTime);
         }
@@ -137,6 +135,7 @@ public class PlayerControllerTest : MonoBehaviour
         {
             charCtrl.Move(Vector3.up * gravity);
         }
+
     }
 
     private void UpdateGrounded()

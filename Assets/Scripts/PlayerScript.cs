@@ -31,18 +31,36 @@ public class PlayerScript : NetworkBehaviour
     public static event Action<PlayerScript, string, bool> OnMessage;
 
 
+    [SerializeField]
+    private float baseMoveSpeed;
 
-    void OnNameChanged(string _Old, string _New)
+    [SerializeField]
+    private float moveSpeed;
+
+    [SerializeField]
+    private float lookSensitivityH;
+
+    [SerializeField]
+    private float lookSensitivityV;
+
+    [SerializeField]
+    private int maxJumps;
+
+    private int selectedWeaponLocal;
+
+
+
+    private void OnNameChanged(string _Old, string _New)
     {
         playerNameText.text = playerName;
     }
 
-    void OnColorChanged(Color _Old, Color _New)
+    private void OnColorChanged(Color _Old, Color _New)
     {
         playerNameTextBackground.color = _New;
     }
 
-    void Awake()
+    private void Awake()
     {
         cameraOffset = new Vector3(0.0f, 0.4f, 0.0f);
 
@@ -57,6 +75,13 @@ public class PlayerScript : NetworkBehaviour
 
         // Find PlayerShoot script
         playerShoot = GetComponent<PlayerShoot>();
+
+        baseMoveSpeed = 6f;
+        moveSpeed = baseMoveSpeed;
+        lookSensitivityH = 5f;
+        lookSensitivityV = 5f;
+        selectedWeaponLocal = 1;
+        maxJumps = 1;
     }
 
     public override void OnStartLocalPlayer()
@@ -109,11 +134,11 @@ public class PlayerScript : NetworkBehaviour
         OnMessage?.Invoke(this, message, isPlayerMsg);
     }
 
-    void Update()
+    private void Update()
     {
         if (!isLocalPlayer)
         {
-            // Make non-local players run this
+            // Make non-local players run this. Only local player has camera
             nameTag.transform.LookAt(Camera.main.transform);
             return;
         }
@@ -124,18 +149,41 @@ public class PlayerScript : NetworkBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            // Unlolck player input and hide chat send text box
+            // Unlock player input and hide chat send text box
             canvasInGameHUD.blockPlayerInput = false;
             canvasInGameHUD.chatMessage.SetActive(false);
         }
         // If we blocked player input we return here.
         if (canvasInGameHUD.blockPlayerInput) { return; }
 
+        // Handle weapon switching
+        int currentSelectedWeapon = playerShoot.HandleSwitchWeaponInput();
 
-        playerController.MovePlayer();
-        playerController.MoveCamera();
+        // Check and update the moving speed depending on current weapon
+        if (currentSelectedWeapon != selectedWeaponLocal)  // Weapon changed
+        {
+            if (currentSelectedWeapon == 0)  // Meele
+            { 
+                moveSpeed *= 1.2f;
+                maxJumps = 2;
+            }
+            else  // Anything else
+            {
+                moveSpeed = baseMoveSpeed;
+                maxJumps = 1;
+            }
 
-        playerShoot.HandleSwitchWeaponInput();
+            selectedWeaponLocal = currentSelectedWeapon;
+        }
+
+        // Handle weapon shooting
         playerShoot.HandleShootWeaponInput();
+
+        // Handle player movement and horizontal rotation
+        playerController.MovePlayer(moveSpeed, maxJumps, lookSensitivityH);
+
+        // Handle camera movement (will rotate on vertical axis)
+        playerController.MoveCamera(lookSensitivityV);
+
     }
 }

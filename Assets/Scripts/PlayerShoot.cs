@@ -18,7 +18,7 @@ public class PlayerShoot : NetworkBehaviour
     [SerializeField]
     private float weaponCooldownTime;
 
-    void Awake()
+    private void Awake()
     {
         selectedWeaponLocal = 1;
         activeWeaponSynced = 1;
@@ -44,7 +44,7 @@ public class PlayerShoot : NetworkBehaviour
         weaponCooldownTime = 1;
     }
 
-    void OnWeaponChanged(int _Old, int _New)
+    private void OnWeaponChanged(int _Old, int _New)
     {
         // Disable old weapon
         // in range and not null
@@ -73,13 +73,13 @@ public class PlayerShoot : NetworkBehaviour
     }
 
     [Command]
-    void CmdShootRay()
+    private void CmdShootRay()
     {
         RpcFireWeapon();
     }
 
     [ClientRpc]
-    void RpcFireWeapon()
+    private void RpcFireWeapon()
     {
         //bulletAudio.Play(); muzzleflash  etc
         var bullet = Instantiate(activeWeapon.weaponBullet, activeWeapon.weaponFirePosition.position, activeWeapon.weaponFirePosition.rotation);
@@ -87,7 +87,9 @@ public class PlayerShoot : NetworkBehaviour
         if (bullet) { Destroy(bullet, activeWeapon.weaponLife); }
     }
 
-    public void HandleSwitchWeaponInput()
+    /// <summary> Handles weapon switching </summary>
+    /// <returns> Selected weapon </returns>
+    public int HandleSwitchWeaponInput()
     {
         float _mouseScrollWheelInput = Input.GetAxisRaw("Mouse ScrollWheel");
         if (_mouseScrollWheelInput > 0)
@@ -128,6 +130,7 @@ public class PlayerShoot : NetworkBehaviour
             selectedWeaponLocal = 2;
             CmdChangeActiveWeapon(selectedWeaponLocal);
         }
+        return selectedWeaponLocal;
     }
 
     public void HandleShootWeaponInput()
