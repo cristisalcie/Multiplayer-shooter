@@ -862,8 +862,59 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6713899338865055468, guid: 14338fa0fd09cc14aa7bc3ae685ea3a6, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 14338fa0fd09cc14aa7bc3ae685ea3a6, type: 3}
+--- !u!1 &596213374 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6713899338865055466, guid: 14338fa0fd09cc14aa7bc3ae685ea3a6,
+    type: 3}
+  m_PrefabInstance: {fileID: 596213373}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &596213375 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6713899338865055469, guid: 14338fa0fd09cc14aa7bc3ae685ea3a6,
+    type: 3}
+  m_PrefabInstance: {fileID: 596213373}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 596213374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7424c1070fad4ba2a7a96b02fbeb4bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &596213376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 596213374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f330594c9aa080544b711c03b47d0759, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dontDestroyOnLoad: 1
+  PersistNetworkManagerToOfflineScene: 0
+  runInBackground: 1
+  autoStartServerBuild: 1
+  serverTickRate: 60
+  serverBatching: 1
+  serverBatchInterval: 0
+  offlineScene: Assets/Scenes/Menu.unity
+  onlineScene: Assets/Scenes/Map1.unity
+  transport: {fileID: 596213375}
+  networkAddress: localhost
+  maxConnections: 16
+  disconnectInactiveConnections: 0
+  disconnectInactiveTimeout: 60
+  authenticator: {fileID: 0}
+  playerPrefab: {fileID: 927745021924650373, guid: 68e3d6b868277b443a7cb4f46324173d,
+    type: 3}
+  autoCreatePlayer: 1
+  playerSpawnMethod: 1
+  spawnPrefabs: []
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

@@ -17,7 +17,7 @@ public class CanvasLobbyHUD : MonoBehaviour
     private void Start()
     {
         // Update the canvas text if you have manually changed network managers address from the game object before starting the game scene
-        if (NetworkManager.singleton.networkAddress != "localhost") { inputFieldAddress.text = NetworkManager.singleton.networkAddress; }
+        if (GameNetworkManager.singleton.networkAddress != "localhost") { inputFieldAddress.text = GameNetworkManager.singleton.networkAddress; }
 
         // Adds a listener to the main input field and invokes a method when the value changes.
         inputFieldAddress.onValueChanged.AddListener(delegate { ValueChangeCheck(); });
@@ -34,24 +34,24 @@ public class CanvasLobbyHUD : MonoBehaviour
     // Invoked when the value of the text field changes.
     public void ValueChangeCheck()
     {
-        NetworkManager.singleton.networkAddress = inputFieldAddress.text;
+        GameNetworkManager.singleton.networkAddress = inputFieldAddress.text;
     }
 
     public void ButtonHost()
     {
-        NetworkManager.singleton.StartHost();
+        GameNetworkManager.singleton.StartHost();
         SetupCanvas();
     }
 
     public void ButtonServer()
     {
-        NetworkManager.singleton.StartServer();
+        GameNetworkManager.singleton.StartServer();
         SetupCanvas();
     }
 
     public void ButtonClient()
     {
-        NetworkManager.singleton.StartClient();
+        GameNetworkManager.singleton.StartClient();
         SetupCanvas();
     }
 
@@ -63,7 +63,7 @@ public class CanvasLobbyHUD : MonoBehaviour
             if (NetworkClient.active)
             {
                 PanelStart.SetActive(false);
-                clientText.text = "Connecting to " + NetworkManager.singleton.networkAddress + "..";
+                clientText.text = "Connecting to " + GameNetworkManager.singleton.networkAddress + "..";
             }
             else
             {

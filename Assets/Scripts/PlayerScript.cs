@@ -16,18 +16,21 @@ public class PlayerScript : NetworkBehaviour
 
     private Vector3 cameraOffset;
 
-    public Text playerNameText;
-    public RawImage playerNameTextBackground;
-    public GameObject nameTag;
+    [SerializeField]
+    private Text playerNameText;
+    [SerializeField]
+    private RawImage playerNameTextBackground;
+    [SerializeField]
+    private GameObject nameTag;
 
     [SyncVar(hook = nameof(OnNameChanged))]
     public string playerName;
 
+    [SerializeField]
     [SyncVar(hook = nameof(OnColorChanged))]
-    public Color playerColor = Color.white;
+    private Color playerColor = Color.white;
 
     public static event Action<PlayerScript, string, bool> OnMessage;
-
 
     [SerializeField]
     private float baseMoveSpeed;
@@ -47,16 +50,6 @@ public class PlayerScript : NetworkBehaviour
     private int selectedWeaponLocal;
 
 
-
-    private void OnNameChanged(string _Old, string _New)
-    {
-        playerNameText.text = playerName;
-    }
-
-    private void OnColorChanged(Color _Old, Color _New)
-    {
-        playerNameTextBackground.color = _New;
-    }
 
     private void Awake()
     {
@@ -93,34 +86,10 @@ public class PlayerScript : NetworkBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        string name = "Player" + UnityEngine.Random.Range(100, 999);
+        string _name = "Player" + UnityEngine.Random.Range(100, 999);
 
-        Color color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
-        CmdSetupPlayer(name, color);
-    }
-
-    [Command]
-    public void CmdSendPlayerMessage(string message)
-    {
-        if (message.Trim() != "")
-            RpcReceive(message.Trim(), true);
-    }
-
-
-    [Command]
-    public void CmdSetupPlayer(string _name, Color _col)
-    {
-        // Player info sent to server, then server updates sync vars which handles it on all clients
-        playerName = _name;
-        playerColor = _col;
-        RpcReceive($"{playerName} joined.".Trim(), false);
-    }
-
-    
-    [ClientRpc]
-    public void RpcReceive(string message, bool isPlayerMsg)
-    {
-        OnMessage?.Invoke(this, message, isPlayerMsg);
+        Color _color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
+        CmdSetupPlayer(_name, _color);
     }
 
     private void Update()
@@ -152,7 +121,7 @@ public class PlayerScript : NetworkBehaviour
         if (currentSelectedWeapon != selectedWeaponLocal)  // Weapon changed
         {
             if (currentSelectedWeapon == 0)  // Meele
-            { 
+            {
                 moveSpeed *= 1.2f;
                 maxJumps = 2;
             }
@@ -173,12 +142,45 @@ public class PlayerScript : NetworkBehaviour
 
         // Handle camera movement (will rotate on vertical axis)
         playerController.MoveCamera(lookSensitivityV);
+    }
 
-        // This way we can get all connections to server.
-        foreach (System.Collections.Generic.KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections) {
-            //Debug.Log($"key = {connection.Key} ; value = {connection.Value}");
-            Debug.Log($"{connection.Value.identity.gameObject.GetComponent<PlayerScript>().playerName}");
-            //Debug.Log(this);
-        }
+    private void OnNameChanged(string _Old, string _New)
+    {
+        playerNameText.text = playerName;
+    }
+
+    private void OnColorChanged(Color _Old, Color _New)
+    {
+        playerNameTextBackground.color = _New;
+    }
+
+    [Command]
+    public void CmdSendPlayerMessage(string _message)
+    {
+        if (_message.Trim() != "")
+            RpcReceive(_message.Trim(), true);
+    }
+
+    [Command]
+    public void CmdSetupPlayer(string _name, Color _col)
+    {
+        // Player info sent to server, then server updates sync vars which handles it on all clients
+        playerName = _name;
+        playerColor = _col;
+        RpcReceive($"{playerName} joined.".Trim(), false);
+        RpcUpdateScoreboard();
+    }
+    
+    [ClientRpc]
+    public void RpcReceive(string _message, bool _isPlayerMsg)
+    {
+        Debug.Log("I got called [RpcReceive]");
+        OnMessage?.Invoke(this, _message, _isPlayerMsg);
+    }
+
+    [ClientRpc]
+    public void RpcUpdateScoreboard()
+    {
+        canvasInGameHUD.UpdateScoreboard();
     }
 }

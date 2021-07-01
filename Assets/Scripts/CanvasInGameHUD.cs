@@ -29,12 +29,28 @@ public class CanvasInGameHUD : MonoBehaviour
     [SerializeField]
     private Text ammoText;
 
+    private GameObject[] scoreboardPlayerList;
+    private const int playerScoreboardItemCount = 4;
+
 
 
     private void Awake()
     {
         paused = false;
         blockPlayerInput = false;
+        
+        scoreboardPlayerList = new GameObject[GameNetworkManager.singleton.maxConnections];
+
+        GameObject _playerList = transform.Find("PanelScoreboard/PlayerList").gameObject;
+        for (int i = 0; i < GameNetworkManager.singleton.maxConnections; ++i)
+        {
+            scoreboardPlayerList[i] = _playerList.transform.GetChild(i).gameObject;
+            for (int j = 0; j < playerScoreboardItemCount; ++j)
+            {
+                Text t = scoreboardPlayerList[i].transform.GetChild(j).GetComponent<Text>();
+                t.text = string.Empty;
+            }
+        }
     }
 
     private void Start()
@@ -58,7 +74,7 @@ public class CanvasInGameHUD : MonoBehaviour
         PanelScoreboard.SetActive(false);
 
         if (NetworkServer.active) { serverText.text = "Server: active. Transport: " + Transport.activeTransport; }
-        if (NetworkClient.isConnected) { clientText.text = "Client: address=" + NetworkManager.singleton.networkAddress; }
+        if (NetworkClient.isConnected) { clientText.text = "Client: address=" + GameNetworkManager.singleton.networkAddress; }
     }
 
     private void ButtonStop()
@@ -66,17 +82,17 @@ public class CanvasInGameHUD : MonoBehaviour
         // Stop host if host mode
         if (NetworkServer.active && NetworkClient.isConnected)
         {
-            NetworkManager.singleton.StopHost();
+            GameNetworkManager.singleton.StopHost();
         }
         // Stop client if client-only
         else if (NetworkClient.isConnected)
         {
-            NetworkManager.singleton.StopClient();
+            GameNetworkManager.singleton.StopClient();
         }
         // Stop server if server-only
         else if (NetworkServer.active)
         {
-            NetworkManager.singleton.StopServer();
+            GameNetworkManager.singleton.StopServer();
         }
     }
 
@@ -111,7 +127,7 @@ public class CanvasInGameHUD : MonoBehaviour
 
                 // Additional information
                 if (NetworkServer.active) { serverText.text = "Server: active. Transport: " + Transport.activeTransport; }
-                if (NetworkClient.isConnected) { clientText.text = "Client: address=" + NetworkManager.singleton.networkAddress; }
+                if (NetworkClient.isConnected) { clientText.text = "Client: address=" + GameNetworkManager.singleton.networkAddress; }
             }
             else
             {
@@ -161,14 +177,26 @@ public class CanvasInGameHUD : MonoBehaviour
 
     private void HandleGameScoreboardInput()
     {
-        // TODO: Handle game scoreboard input
-        if (Input.GetKey(KeyCode.Tab))  // "Tab" key is being held down
+        if (Input.GetKeyDown(KeyCode.Tab))  // "Tab" key is being pressed
         {
             PanelScoreboard.SetActive(true);
         }
-        else  // "Tab" key is not held down
+        else if (Input.GetKeyUp(KeyCode.Tab))  // "Tab" key is released
         {
             PanelScoreboard.SetActive(false);
+        }
+    }
+
+    public void UpdateScoreboard()
+    {
+        // TODO: Logic for calculating scoreboard.
+
+        // This way we can get all connections to server.
+        foreach (System.Collections.Generic.KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections)
+        {
+            //Debug.Log($"key = {connection.Key} ; value = {connection.Value}");
+            //Debug.Log($"{connection.Value.identity.gameObject.GetComponent<PlayerScript>().playerName}");
+            //Debug.Log(this);
         }
     }
 }
