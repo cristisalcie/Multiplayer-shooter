@@ -7,16 +7,31 @@ public class CanvasInGameHUD : MonoBehaviour
     public bool paused;
     public bool blockPlayerInput;
 
-	public Button buttonStop;
+    [SerializeField]
+	private Button buttonStop;
 	
-	public GameObject PanelOptions;
-	public GameObject chatWindow;
+    [SerializeField]
+	private GameObject PanelOptions;
+
+	public GameObject PanelScoreboard;
+
+    [SerializeField]
+	private GameObject chatWindow;
+
 	public GameObject chatMessage;
 
-	public Text serverText;
-	public Text clientText;
+    [SerializeField]
+	private Text serverText;
 
-    public void Awake()
+    [SerializeField]
+	private Text clientText;
+
+    [SerializeField]
+    private Text ammoText;
+
+
+
+    private void Awake()
     {
         paused = false;
         blockPlayerInput = false;
@@ -27,11 +42,26 @@ public class CanvasInGameHUD : MonoBehaviour
         // Make sure to attach these Buttons in the Inspector
         buttonStop.onClick.AddListener(ButtonStop);
 
-        // This updates the Unity canvas.
         SetupCanvas();
     }
 
-    public void ButtonStop()
+    private void Update()
+    {
+        HandlePauseResumeInput();
+        HandleChatInput();
+        HandleGameScoreboardInput();
+    }
+
+    private void SetupCanvas()
+    {
+        PanelOptions.SetActive(false);
+        PanelScoreboard.SetActive(false);
+
+        if (NetworkServer.active) { serverText.text = "Server: active. Transport: " + Transport.activeTransport; }
+        if (NetworkClient.isConnected) { clientText.text = "Client: address=" + NetworkManager.singleton.networkAddress; }
+    }
+
+    private void ButtonStop()
     {
         // Stop host if host mode
         if (NetworkServer.active && NetworkClient.isConnected)
@@ -50,17 +80,14 @@ public class CanvasInGameHUD : MonoBehaviour
         }
     }
 
-    public void SetupCanvas()
+    public void UIAmmo(int _value)
     {
-        PanelOptions.SetActive(false);
-
-        // server / client status message. These won't update from here or in some occasions when starting from map editor.
-        if (NetworkServer.active) { serverText.text = "Server: active. Transport: " + Transport.activeTransport; }
-        if (NetworkClient.isConnected) { clientText.text = "Client: address=" + NetworkManager.singleton.networkAddress; }
+        ammoText.text = "Ammo: " + _value;
     }
 
-    public void Update()
+    private void HandlePauseResumeInput()
     {
+        // Handle pause/resume input
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             paused = !paused;
@@ -95,6 +122,11 @@ public class CanvasInGameHUD : MonoBehaviour
                 Cursor.visible = false;
             }
         }
+    }
+
+    private void HandleChatInput()
+    {
+        // Handle chat input
         if (Input.GetKeyDown(KeyCode.T))
         {
             if (!paused)
@@ -108,7 +140,7 @@ public class CanvasInGameHUD : MonoBehaviour
             }
             chatMessage.SetActive(true);
             chatMessage.GetComponent<InputField>().ActivateInputField();
-            
+
         }
         else if (Input.GetKeyDown(KeyCode.Return))
         {
@@ -124,6 +156,19 @@ public class CanvasInGameHUD : MonoBehaviour
             chatMessage.GetComponent<InputField>().DeactivateInputField();
             chatMessage.SetActive(false);
             chatWindow.GetComponent<ChatWindow>().OnSend();
+        }
+    }
+
+    private void HandleGameScoreboardInput()
+    {
+        // TODO: Handle game scoreboard input
+        if (Input.GetKey(KeyCode.Tab))  // "Tab" key is being held down
+        {
+            PanelScoreboard.SetActive(true);
+        }
+        else  // "Tab" key is not held down
+        {
+            PanelScoreboard.SetActive(false);
         }
     }
 }

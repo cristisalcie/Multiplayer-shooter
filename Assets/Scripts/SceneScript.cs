@@ -1,15 +1,11 @@
 ﻿using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class SceneScript : NetworkBehaviour
 {
+    // Networked objects will not be always found with "Find" which is why we use a sceneReference that is a monoBehaviour
     public SceneReference sceneReference;
-
-    public Text canvasStatusText;
-    public PlayerScript playerScript;
-    public Text canvasAmmoText;
 
     public void ButtonChangeScene()
     {
@@ -21,10 +17,5 @@ public class SceneScript : NetworkBehaviour
             else { NetworkManager.singleton.ServerChangeScene("Map1"); }
         }
         else { Debug.Log("You are not Host."); }
-    }
-
-    public void UIAmmo(int _value)
-    {
-        canvasAmmoText.text = "Ammo: " + _value;
     }
 }

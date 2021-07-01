@@ -1,12 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
+/// <summary> This class is not used for now. Maybe will be removed later </summary>
 public class GameManager : MonoBehaviour
 {
     public bool dontDestroyOnLoad = true;
     public static GameManager singleton { get; private set; }
-    private static Dictionary<string, PlayerScript> players = new Dictionary<string, PlayerScript>();
 
     public virtual void Awake()
     {
@@ -14,7 +15,7 @@ public class GameManager : MonoBehaviour
         if (!InitializeSingleton()) return;
     }
 
-    bool InitializeSingleton()
+    private bool InitializeSingleton()
     {
         if (singleton != null && singleton == this)
             return true;
@@ -40,21 +41,5 @@ public class GameManager : MonoBehaviour
         }
 
         return true;
-    }
-
-    public static void AddPlayer(string playerId, PlayerScript player)
-    {
-        players.Add(playerId, player);
-        Debug.Log($"introduced {playerId} in dictionary");
-    }
-    public static void RemovePlayer(string playerId)
-    {
-        players.Remove(playerId);
-        Debug.Log($"removed {playerId} from dictionary");
-    }
-
-    public static PlayerScript GetPlayer(string playerId)
-    {
-        return players[playerId];
     }
 }

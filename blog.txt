@@ -1,0 +1,5 @@
+29.06.2021 - Understood raycasting, created new test movement using unity's character controller
+
+30.06.2021 - Integrated new movement into project, implemented faster movement speed and double jump while using meele and single jump when using other weapons, understood how to find all connected players (network identities), finally understood Delegates and that EventHandlers and Actions are implemented over Delegates hence they are Delegates
+
+01.07.2021 - Separated code into function in canvasInGameHUD, created scoreboard template with fields ready to be hooked up to players 

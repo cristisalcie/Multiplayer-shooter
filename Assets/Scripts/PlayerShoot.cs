@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class PlayerShoot : NetworkBehaviour
 {
-    private SceneScript sceneScript;
+    private CanvasInGameHUD canvasInGameHUD;
 
     [SerializeField]
     private int selectedWeaponLocal;
@@ -33,13 +33,12 @@ public class PlayerShoot : NetworkBehaviour
         }
         weaponArray[selectedWeaponLocal].SetActive(true);
 
-        // Allow all players to run this
-        sceneScript = GameObject.Find("SceneReference").GetComponent<SceneReference>().sceneScript;
+        canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
 
         if (selectedWeaponLocal < weaponArray.Length && weaponArray[selectedWeaponLocal] != null)
         {
             activeWeapon = weaponArray[selectedWeaponLocal].GetComponent<Weapon>();
-            sceneScript.UIAmmo(activeWeapon.weaponAmmo);
+            canvasInGameHUD.UIAmmo(activeWeapon.weaponAmmo);
         }
         weaponCooldownTime = 1;
     }
@@ -47,21 +46,19 @@ public class PlayerShoot : NetworkBehaviour
     private void OnWeaponChanged(int _Old, int _New)
     {
         // Disable old weapon
-        // in range and not null
-        if (0 <= _Old && _Old < weaponArray.Length && weaponArray[_Old] != null)
+        if (0 <= _Old && _Old < weaponArray.Length && weaponArray[_Old] != null)  // In range and not null
         {
             weaponArray[_Old].SetActive(false);
         }
 
         // Enable new weapon
-        // in range and not null
-        if (0 <= _New && _New < weaponArray.Length && weaponArray[_New] != null)
+        if (0 <= _New && _New < weaponArray.Length && weaponArray[_New] != null)  // In range and not null
         {
             weaponArray[_New].SetActive(true);
             if (_New != 0)  // Meele weapon not implemented
             {
                 activeWeapon = weaponArray[activeWeaponSynced].GetComponent<Weapon>();
-                if (isLocalPlayer) { sceneScript.UIAmmo(activeWeapon.weaponAmmo); }
+                if (isLocalPlayer) { canvasInGameHUD.UIAmmo(activeWeapon.weaponAmmo); }
             }
         }
     }
@@ -143,15 +140,10 @@ public class PlayerShoot : NetworkBehaviour
                 {
                     weaponCooldownTime = Time.time + activeWeapon.weaponCooldown;
                     activeWeapon.weaponAmmo -= 1;
-                    sceneScript.UIAmmo(activeWeapon.weaponAmmo);
+                    canvasInGameHUD.UIAmmo(activeWeapon.weaponAmmo);
                     CmdShootRay();
                 }
             }
         }
-    }
-
-    public void SetupPlayerShoot(SceneScript _sceneScript)
-    {
-        sceneScript = _sceneScript;
     }
 }

@@ -10,8 +10,6 @@ public class PlayerScript : NetworkBehaviour
 {
     private CanvasInGameHUD canvasInGameHUD;
 
-    private SceneScript sceneScript;
-
     private PlayerController playerController;
 
     private PlayerShoot playerShoot;
@@ -64,9 +62,6 @@ public class PlayerScript : NetworkBehaviour
     {
         cameraOffset = new Vector3(0.0f, 0.4f, 0.0f);
 
-        // Allow all players to run this
-        sceneScript = GameObject.Find("SceneReference").GetComponent<SceneReference>().sceneScript;
-
         // Find canvasInGameHUD script
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
 
@@ -98,16 +93,10 @@ public class PlayerScript : NetworkBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        sceneScript.playerScript = this;
-
         string name = "Player" + UnityEngine.Random.Range(100, 999);
 
         Color color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
         CmdSetupPlayer(name, color);
-
-        //GameManager.AddPlayer(playerName + netId, this);
-
-        playerShoot.SetupPlayerShoot(sceneScript);
     }
 
     [Command]
@@ -185,5 +174,11 @@ public class PlayerScript : NetworkBehaviour
         // Handle camera movement (will rotate on vertical axis)
         playerController.MoveCamera(lookSensitivityV);
 
+        // This way we can get all connections to server.
+        foreach (System.Collections.Generic.KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections) {
+            //Debug.Log($"key = {connection.Key} ; value = {connection.Value}");
+            Debug.Log($"{connection.Value.identity.gameObject.GetComponent<PlayerScript>().playerName}");
+            //Debug.Log(this);
+        }
     }
 }
