@@ -6,8 +6,20 @@ using System;
 
 public class GameNetworkManager : NetworkManager
 {
+    private List<PlayerScript.ScoreboardData> scoreboardPlayerList;
+
+
+    public override void Awake()
+    {
+        base.Awake();
+
+        scoreboardPlayerList = new List<PlayerScript.ScoreboardData> { Capacity = maxConnections };
+    }
+
+
     public override void OnServerDisconnect(NetworkConnection conn)
     {
+        PlayerScript _dcPlayerScript = conn.identity.gameObject.GetComponent<PlayerScript>();
         if (numPlayers > 0)
         {
             PlayerScript _playerScript = null;
@@ -21,12 +33,58 @@ public class GameNetworkManager : NetworkManager
             }
             if (_playerScript != null)
             {
-                _playerScript.RpcReceive($"{conn.identity.gameObject.GetComponent<PlayerScript>().playerName} disconnected", false);
-                _playerScript.RpcUpdateScoreboard();
+                _playerScript.RpcReceive($"{_dcPlayerScript.playerName} disconnected", false);
+
+                RemoveFromScoreboard(_dcPlayerScript.scoreboardData);
+                _playerScript.RpcUpdateScoreboard(scoreboardPlayerList);
             }
         } 
 
-        Debug.Log($"{conn.identity.gameObject.GetComponent<PlayerScript>().playerName} disconnected and numplayers is {numPlayers}");
+        Debug.Log($"{_dcPlayerScript.playerName} disconnected and numplayers is {numPlayers}");
         base.OnServerDisconnect(conn);
+    }
+
+    public void InsertIntoScoreboard(PlayerScript.ScoreboardData _scoreboardData)
+    {
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
+        {
+            if (scoreboardPlayerList[i].playerName == _scoreboardData.playerName)
+            {
+                return;
+            }
+        }
+        scoreboardPlayerList.Add(_scoreboardData);
+    }
+
+    public void RemoveFromScoreboard(PlayerScript.ScoreboardData _scoreboardData)
+    {
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
+        {
+            if (scoreboardPlayerList[i].playerName == _scoreboardData.playerName)
+            {
+                scoreboardPlayerList.RemoveAt(i);
+                break;
+            }
+        }
+    }
+
+    public List<PlayerScript.ScoreboardData> GetScoreboardPlayerList()
+    {
+        return scoreboardPlayerList;
+    }
+
+    public void UpdateScoreboardList(PlayerScript.ScoreboardData _scoreboardData)
+    {
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
+        {
+            if (scoreboardPlayerList[i].playerName == _scoreboardData.playerName)
+            {
+                PlayerScript.ScoreboardData _sd = scoreboardPlayerList[i];
+                _sd.kills = _scoreboardData.kills;
+                _sd.deaths = _scoreboardData.deaths;
+                scoreboardPlayerList[i] = _sd;
+                break;
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Mirror;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +9,15 @@ using UnityEngine.UI;
 [RequireComponent(typeof(PlayerShoot))]
 public class PlayerScript : NetworkBehaviour
 {
+    public struct ScoreboardData
+    {
+        public string playerName;
+        public int kills;
+        public int deaths;
+    }
+    
+    public ScoreboardData scoreboardData;
+
     private CanvasInGameHUD canvasInGameHUD;
 
     private PlayerController playerController;
@@ -15,6 +25,7 @@ public class PlayerScript : NetworkBehaviour
     private PlayerShoot playerShoot;
 
     private Vector3 cameraOffset;
+
 
     [SerializeField]
     private Text playerNameText;
@@ -48,7 +59,6 @@ public class PlayerScript : NetworkBehaviour
     private int maxJumps;
 
     private int selectedWeaponLocal;
-
 
 
     private void Awake()
@@ -89,7 +99,11 @@ public class PlayerScript : NetworkBehaviour
         string _name = "Player" + UnityEngine.Random.Range(100, 999);
 
         Color _color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
-        CmdSetupPlayer(_name, _color);
+
+        scoreboardData.playerName = _name;
+        scoreboardData.kills = 0;
+        scoreboardData.deaths = 0;
+        CmdSetupPlayer(_name, _color, scoreboardData);
     }
 
     private void Update()
@@ -142,6 +156,13 @@ public class PlayerScript : NetworkBehaviour
 
         // Handle camera movement (will rotate on vertical axis)
         playerController.MoveCamera(lookSensitivityV);
+
+        // Test scoreboard sorting by having a way of increasing kills for a player
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            ++scoreboardData.kills;
+            CmdIncreaseKillTestFunc(scoreboardData);
+        }
     }
 
     private void OnNameChanged(string _Old, string _New)
@@ -162,25 +183,34 @@ public class PlayerScript : NetworkBehaviour
     }
 
     [Command]
-    public void CmdSetupPlayer(string _name, Color _col)
+    public void CmdSetupPlayer(string _name, Color _col, ScoreboardData _scoreboardData)
     {
         // Player info sent to server, then server updates sync vars which handles it on all clients
         playerName = _name;
         playerColor = _col;
-        RpcReceive($"{playerName} joined.".Trim(), false);
-        RpcUpdateScoreboard();
+        scoreboardData = _scoreboardData;  // Allow server to know every player scoreboardData just like it does with [SyncVar] tags.
+        RpcReceive($"{playerName} joined".Trim(), false);
+        ((GameNetworkManager)GameNetworkManager.singleton).InsertIntoScoreboard(_scoreboardData);
+        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
     
     [ClientRpc]
     public void RpcReceive(string _message, bool _isPlayerMsg)
     {
-        Debug.Log("I got called [RpcReceive]");
         OnMessage?.Invoke(this, _message, _isPlayerMsg);
     }
 
     [ClientRpc]
-    public void RpcUpdateScoreboard()
+    public void RpcUpdateScoreboard(List<ScoreboardData> _scoreboardPlayerList)
     {
-        canvasInGameHUD.UpdateScoreboard();
+        canvasInGameHUD.UpdateScoreboard(_scoreboardPlayerList);
+    }
+
+    [Command]
+    public void CmdIncreaseKillTestFunc(ScoreboardData _scoreboardData)
+    {
+        scoreboardData = _scoreboardData;  // Allow server to know every player scoreboardData just like it does with [SyncVar] tags.
+        ((GameNetworkManager)GameNetworkManager.singleton).UpdateScoreboardList(_scoreboardData);
+        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
 }
