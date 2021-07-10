@@ -5,3 +5,4 @@
 01.07.2021 - Separated code into function in canvasInGameHUD, created scoreboard template with fields ready to be hooked up to players, learned how to extend NetworkManager and implemented disconnect message sending on chat
 
 09.07.2021 - Implemented first working scoreboard
+10.07.2021 - Improved scoreboard but can do better

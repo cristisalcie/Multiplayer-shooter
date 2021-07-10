@@ -9,15 +9,6 @@ using UnityEngine.UI;
 [RequireComponent(typeof(PlayerShoot))]
 public class PlayerScript : NetworkBehaviour
 {
-    public struct ScoreboardData
-    {
-        public string playerName;
-        public int kills;
-        public int deaths;
-    }
-    
-    public ScoreboardData scoreboardData;
-
     private CanvasInGameHUD canvasInGameHUD;
 
     private PlayerController playerController;
@@ -60,6 +51,11 @@ public class PlayerScript : NetworkBehaviour
 
     private int selectedWeaponLocal;
 
+    [SyncVar]
+    private int kills;
+
+    [SyncVar]
+    private int deaths;
 
     private void Awake()
     {
@@ -100,10 +96,7 @@ public class PlayerScript : NetworkBehaviour
 
         Color _color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
 
-        scoreboardData.playerName = _name;
-        scoreboardData.kills = 0;
-        scoreboardData.deaths = 0;
-        CmdSetupPlayer(_name, _color, scoreboardData);
+        CmdSetupPlayer(_name, _color);
     }
 
     private void Update()
@@ -160,8 +153,7 @@ public class PlayerScript : NetworkBehaviour
         // Test scoreboard sorting by having a way of increasing kills for a player
         if (Input.GetKeyDown(KeyCode.K))
         {
-            ++scoreboardData.kills;
-            CmdIncreaseKillTestFunc(scoreboardData);
+            CmdIncreaseKillTestFunc();
         }
     }
 
@@ -183,14 +175,13 @@ public class PlayerScript : NetworkBehaviour
     }
 
     [Command]
-    public void CmdSetupPlayer(string _name, Color _col, ScoreboardData _scoreboardData)
+    public void CmdSetupPlayer(string _name, Color _col)
     {
         // Player info sent to server, then server updates sync vars which handles it on all clients
         playerName = _name;
         playerColor = _col;
-        scoreboardData = _scoreboardData;  // Allow server to know every player scoreboardData just like it does with [SyncVar] tags.
         RpcReceive($"{playerName} joined".Trim(), false);
-        ((GameNetworkManager)GameNetworkManager.singleton).InsertIntoScoreboard(_scoreboardData);
+        ((GameNetworkManager)GameNetworkManager.singleton).InsertIntoScoreboard(playerName);
         RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
     
@@ -201,16 +192,16 @@ public class PlayerScript : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcUpdateScoreboard(List<ScoreboardData> _scoreboardPlayerList)
+    public void RpcUpdateScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
     {
         canvasInGameHUD.UpdateScoreboard(_scoreboardPlayerList);
     }
 
     [Command]
-    public void CmdIncreaseKillTestFunc(ScoreboardData _scoreboardData)
+    public void CmdIncreaseKillTestFunc()
     {
-        scoreboardData = _scoreboardData;  // Allow server to know every player scoreboardData just like it does with [SyncVar] tags.
-        ((GameNetworkManager)GameNetworkManager.singleton).UpdateScoreboardList(_scoreboardData);
+        ++kills;
+        ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardKillsOf(playerName);
         RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
 }

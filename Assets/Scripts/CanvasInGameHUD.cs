@@ -40,12 +40,11 @@ public class CanvasInGameHUD : MonoBehaviour
 
     private GameObject[] scoreboardPlayerListUI;
 
-    //private List<PlayerScript> scoreboardPlayerList;
     private ScoreboardListComparer scoreboardListComparer;
 
-    private class ScoreboardListComparer : IComparer<PlayerScript.ScoreboardData>
+    private class ScoreboardListComparer : IComparer<GameNetworkManager.ScoreboardData>
     {
-        public int Compare(PlayerScript.ScoreboardData x, PlayerScript.ScoreboardData y)
+        public int Compare(GameNetworkManager.ScoreboardData x, GameNetworkManager.ScoreboardData y)
         {
             if (x.kills < y.kills)
             {
@@ -74,7 +73,6 @@ public class CanvasInGameHUD : MonoBehaviour
             }
         }
 
-        //scoreboardPlayerList = new List<PlayerScript>();
         scoreboardListComparer = new ScoreboardListComparer();
     }
 
@@ -212,60 +210,7 @@ public class CanvasInGameHUD : MonoBehaviour
         }
     }
 
-    //public void UpdateScoreboard()
-    //{
-    //    // Called when a player connects/disconnects/gets killed/ makes kill
-    //    // TODO: Logic for calculating scoreboard.
-    //    // TODO: Optimize this and comment it
-
-    //    // This way we can get all connections to server.
-    //    foreach (System.Collections.Generic.KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections)
-    //    {
-    //        //Debug.Log($"key = {connection.Key} ; value = {connection.Value}");
-    //        //Debug.Log($"{connection.Value.identity.gameObject.GetComponent<PlayerScript>().playerName}");
-    //        //Debug.Log(this);
-    //        PlayerScript tmp = connection.Value.identity.gameObject.GetComponent<PlayerScript>();
-    //        if (!scoreboardPlayerList.Contains(tmp))  // Is not in the list
-    //        {
-    //            scoreboardPlayerList.Add(tmp);  // Add it
-    //        }
-    //    }
-    //    scoreboardPlayerList.Sort(scoreboardListComparer);
-
-    //    foreach (PlayerScript p in scoreboardPlayerList)
-    //    {
-    //        Debug.Log($"[on client] {p.playerName} has {p.kills} kills");
-    //    }
-    //    Debug.Log($"[on client] GameNetworkManager.singleton.numPlayers = {GameNetworkManager.singleton.numPlayers}");
-    //    Debug.Log($"[on client] scoreboardPlayerList.Count = {scoreboardPlayerList.Count}");
-
-    //    for (int i = 0; i < GameNetworkManager.singleton.maxConnections; ++i)
-    //    {
-    //        if (i < scoreboardPlayerList.Count)
-    //        {
-    //            Text _rank = scoreboardPlayerListUI[i].transform.GetChild((int)PlayerScoreboardItemField.Rank).GetComponent<Text>();
-    //            _rank.text = (i + 1).ToString();
-
-    //            Text _username = scoreboardPlayerListUI[i].transform.GetChild((int)PlayerScoreboardItemField.Username).GetComponent<Text>();
-    //            _username.text = scoreboardPlayerList[i].playerName;
-
-    //            Text _kills = scoreboardPlayerListUI[i].transform.GetChild((int)PlayerScoreboardItemField.Kills).GetComponent<Text>();
-    //            _kills.text = scoreboardPlayerList[i].kills.ToString();
-
-    //            Text _deaths = scoreboardPlayerListUI[i].transform.GetChild((int)PlayerScoreboardItemField.Deaths).GetComponent<Text>();
-    //            _deaths.text = scoreboardPlayerList[i].deaths.ToString();
-    //        }
-    //        else
-    //        {
-    //            for (int j = 0; j < (int)PlayerScoreboardItemField.GetSize; ++j)
-    //            {
-    //                Text t = scoreboardPlayerListUI[i].transform.GetChild(j).GetComponent<Text>();
-    //                t.text = string.Empty;
-    //            }
-    //        }
-    //    }
-    //}
-    public void UpdateScoreboard(List<PlayerScript.ScoreboardData> _scoreboardPlayerList)
+    public void UpdateScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
     {
         // Called when a player connects/disconnects/gets killed/ makes kill
         // TODO: Logic for calculating scoreboard.
@@ -273,7 +218,7 @@ public class CanvasInGameHUD : MonoBehaviour
 
         _scoreboardPlayerList.Sort(scoreboardListComparer); // maybe have it sorted on the server
 
-        foreach (PlayerScript.ScoreboardData p in _scoreboardPlayerList)
+        foreach (GameNetworkManager.ScoreboardData p in _scoreboardPlayerList)
         {
             Debug.Log($"[on client] {p.playerName} has {p.kills} kills");
         }

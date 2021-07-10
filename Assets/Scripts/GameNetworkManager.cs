@@ -6,14 +6,21 @@ using System;
 
 public class GameNetworkManager : NetworkManager
 {
-    private List<PlayerScript.ScoreboardData> scoreboardPlayerList;
+    public struct ScoreboardData
+    {
+        public string playerName;
+        public int kills;
+        public int deaths;
+    }
+
+    private List<ScoreboardData> scoreboardPlayerList;
 
 
     public override void Awake()
     {
         base.Awake();
 
-        scoreboardPlayerList = new List<PlayerScript.ScoreboardData> { Capacity = maxConnections };
+        scoreboardPlayerList = new List<ScoreboardData> { Capacity = maxConnections };
     }
 
 
@@ -35,7 +42,7 @@ public class GameNetworkManager : NetworkManager
             {
                 _playerScript.RpcReceive($"{_dcPlayerScript.playerName} disconnected", false);
 
-                RemoveFromScoreboard(_dcPlayerScript.scoreboardData);
+                RemoveFromScoreboard(_dcPlayerScript.playerName);
                 _playerScript.RpcUpdateScoreboard(scoreboardPlayerList);
             }
         } 
@@ -44,23 +51,23 @@ public class GameNetworkManager : NetworkManager
         base.OnServerDisconnect(conn);
     }
 
-    public void InsertIntoScoreboard(PlayerScript.ScoreboardData _scoreboardData)
+    public void InsertIntoScoreboard(string _playerName)
     {
         for (int i = 0; i < scoreboardPlayerList.Count; ++i)
         {
-            if (scoreboardPlayerList[i].playerName == _scoreboardData.playerName)
+            if (scoreboardPlayerList[i].playerName == _playerName)
             {
                 return;
             }
         }
-        scoreboardPlayerList.Add(_scoreboardData);
+        scoreboardPlayerList.Add(new ScoreboardData { playerName = _playerName, kills = 0, deaths = 0 });
     }
 
-    public void RemoveFromScoreboard(PlayerScript.ScoreboardData _scoreboardData)
+    public void RemoveFromScoreboard(string _playerName)
     {
         for (int i = 0; i < scoreboardPlayerList.Count; ++i)
         {
-            if (scoreboardPlayerList[i].playerName == _scoreboardData.playerName)
+            if (scoreboardPlayerList[i].playerName == _playerName)
             {
                 scoreboardPlayerList.RemoveAt(i);
                 break;
@@ -68,20 +75,33 @@ public class GameNetworkManager : NetworkManager
         }
     }
 
-    public List<PlayerScript.ScoreboardData> GetScoreboardPlayerList()
+    public List<ScoreboardData> GetScoreboardPlayerList()
     {
         return scoreboardPlayerList;
     }
 
-    public void UpdateScoreboardList(PlayerScript.ScoreboardData _scoreboardData)
+    public void IncrementScoreboardKillsOf(string _playerName)
     {
         for (int i = 0; i < scoreboardPlayerList.Count; ++i)
         {
-            if (scoreboardPlayerList[i].playerName == _scoreboardData.playerName)
+            if (scoreboardPlayerList[i].playerName == _playerName)
             {
-                PlayerScript.ScoreboardData _sd = scoreboardPlayerList[i];
-                _sd.kills = _scoreboardData.kills;
-                _sd.deaths = _scoreboardData.deaths;
+                ScoreboardData _sd = scoreboardPlayerList[i];
+                _sd.kills = scoreboardPlayerList[i].kills + 1;
+                scoreboardPlayerList[i] = _sd;
+                break;
+            }
+        }
+    }
+    
+    public void IncrementScoreboardDeathsOf(string _playerName)
+    {
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
+        {
+            if (scoreboardPlayerList[i].playerName == _playerName)
+            {
+                ScoreboardData _sd = scoreboardPlayerList[i];
+                _sd.deaths = scoreboardPlayerList[i].deaths + 1;
                 scoreboardPlayerList[i] = _sd;
                 break;
             }
