@@ -20,8 +20,10 @@ public class PlayerScript : NetworkBehaviour
 
     [SerializeField]
     private Text playerNameText;
+
     [SerializeField]
     private RawImage playerNameTextBackground;
+
     [SerializeField]
     private GameObject nameTag;
 
@@ -76,6 +78,8 @@ public class PlayerScript : NetworkBehaviour
         lookSensitivityV = 5f;
         selectedWeaponLocal = 1;
         maxJumps = 1;
+        kills = 0;
+        deaths = 0;
     }
 
     public override void OnStartLocalPlayer()
@@ -150,10 +154,14 @@ public class PlayerScript : NetworkBehaviour
         // Handle camera movement (will rotate on vertical axis)
         playerController.MoveCamera(lookSensitivityV);
 
-        // Test scoreboard sorting by having a way of increasing kills for a player
+        // Test scoreboard sorting by having a way of increasing kills/deaths for a player
         if (Input.GetKeyDown(KeyCode.K))
         {
             CmdIncreaseKillTestFunc();
+        }
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            CmdIncreaseDeathTestFunc();
         }
     }
 
@@ -181,10 +189,28 @@ public class PlayerScript : NetworkBehaviour
         playerName = _name;
         playerColor = _col;
         RpcReceive($"{playerName} joined".Trim(), false);
+
+        // Insert and update scoreboard
         ((GameNetworkManager)GameNetworkManager.singleton).InsertIntoScoreboard(playerName);
         RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
-    
+
+    [Command]
+    public void CmdIncreaseKillTestFunc()
+    {
+        ++kills;
+        ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardKillsOf(playerName);
+        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+    }
+
+    [Command]
+    public void CmdIncreaseDeathTestFunc()
+    {
+        ++deaths;
+        ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardDeathsOf(playerName);
+        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+    }
+
     [ClientRpc]
     public void RpcReceive(string _message, bool _isPlayerMsg)
     {
@@ -194,14 +220,6 @@ public class PlayerScript : NetworkBehaviour
     [ClientRpc]
     public void RpcUpdateScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
     {
-        canvasInGameHUD.UpdateScoreboard(_scoreboardPlayerList);
-    }
-
-    [Command]
-    public void CmdIncreaseKillTestFunc()
-    {
-        ++kills;
-        ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardKillsOf(playerName);
-        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+        canvasInGameHUD.UpdateScoreboardUI(_scoreboardPlayerList);
     }
 }

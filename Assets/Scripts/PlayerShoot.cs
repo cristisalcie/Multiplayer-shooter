@@ -38,7 +38,7 @@ public class PlayerShoot : NetworkBehaviour
         if (selectedWeaponLocal < weaponArray.Length && weaponArray[selectedWeaponLocal] != null)
         {
             activeWeapon = weaponArray[selectedWeaponLocal].GetComponent<Weapon>();
-            canvasInGameHUD.UIAmmo(activeWeapon.weaponAmmo);
+            canvasInGameHUD.UpdateAmmoUI(activeWeapon.weaponAmmo);
         }
         weaponCooldownTime = 1;
     }
@@ -58,7 +58,7 @@ public class PlayerShoot : NetworkBehaviour
             if (_New != 0)  // Meele weapon not implemented
             {
                 activeWeapon = weaponArray[activeWeaponSynced].GetComponent<Weapon>();
-                if (isLocalPlayer) { canvasInGameHUD.UIAmmo(activeWeapon.weaponAmmo); }
+                if (isLocalPlayer) { canvasInGameHUD.UpdateAmmoUI(activeWeapon.weaponAmmo); }
             }
         }
     }
@@ -140,7 +140,7 @@ public class PlayerShoot : NetworkBehaviour
                 {
                     weaponCooldownTime = Time.time + activeWeapon.weaponCooldown;
                     activeWeapon.weaponAmmo -= 1;
-                    canvasInGameHUD.UIAmmo(activeWeapon.weaponAmmo);
+                    canvasInGameHUD.UpdateAmmoUI(activeWeapon.weaponAmmo);
                     CmdShootRay();
                 }
             }

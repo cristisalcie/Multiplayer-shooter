@@ -1,8 +1,6 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
-using System;
 
 public class GameNetworkManager : NetworkManager
 {
@@ -45,7 +43,7 @@ public class GameNetworkManager : NetworkManager
                 RemoveFromScoreboard(_dcPlayerScript.playerName);
                 _playerScript.RpcUpdateScoreboard(scoreboardPlayerList);
             }
-        } 
+        }
 
         Debug.Log($"{_dcPlayerScript.playerName} disconnected and numplayers is {numPlayers}");
         base.OnServerDisconnect(conn);
@@ -93,7 +91,7 @@ public class GameNetworkManager : NetworkManager
             }
         }
     }
-    
+
     public void IncrementScoreboardDeathsOf(string _playerName)
     {
         for (int i = 0; i < scoreboardPlayerList.Count; ++i)

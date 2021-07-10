@@ -6,3 +6,12 @@
 
 09.07.2021 - Implemented first working scoreboard
 10.07.2021 - Improved scoreboard but can do better
+10.07.2021 - I tried to sync kills and deaths with a hook function that would get called on every player when kills or deaths change value and update an internal playerScript scoreboard player list.
+When a player would join they create a new empty list with capacity maxConnections and call a command to server (CmdSetupPlayer) to insert playerName into every single connected client by using ClientRpc function
+	RpcInsertIntoScoreboard(string _playerName).
+When a player disconnects, in GameNetworkManager
+	OnServerDisconnect(NetworkConnection conn)
+we would call a clientRPC
+	_dcPlayerScript.RpcRemoveFromScoreboard(string _playerName)
+to tell every connected client to remove that player from their scoreboard.
+The problem i encountered and couldn't solve is that when from inside a [Command] tagged function call a ClientRpc (for example RpcUpdateScoreboard()) i would get that the scoreboardPlayerList is null error.

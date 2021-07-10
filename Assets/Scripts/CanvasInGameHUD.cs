@@ -119,11 +119,6 @@ public class CanvasInGameHUD : MonoBehaviour
         }
     }
 
-    public void UIAmmo(int _value)
-    {
-        ammoText.text = "Ammo: " + _value;
-    }
-
     private void HandlePauseResumeInput()
     {
         // Handle pause/resume input
@@ -210,18 +205,15 @@ public class CanvasInGameHUD : MonoBehaviour
         }
     }
 
-    public void UpdateScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
+    public void UpdateAmmoUI(int _value)
     {
-        // Called when a player connects/disconnects/gets killed/ makes kill
-        // TODO: Logic for calculating scoreboard.
-        // TODO: Optimize this and comment it
+        ammoText.text = "Ammo: " + _value;
+    }
 
-        _scoreboardPlayerList.Sort(scoreboardListComparer); // maybe have it sorted on the server
-
-        foreach (GameNetworkManager.ScoreboardData p in _scoreboardPlayerList)
-        {
-            Debug.Log($"[on client] {p.playerName} has {p.kills} kills");
-        }
+    public void UpdateScoreboardUI(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
+    {
+        // Called when scoreboard changed and it must be updated into UI
+        _scoreboardPlayerList.Sort(scoreboardListComparer);
 
         for (int i = 0; i < GameNetworkManager.singleton.maxConnections; ++i)
         {
