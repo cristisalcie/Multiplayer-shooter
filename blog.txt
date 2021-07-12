@@ -5,6 +5,7 @@
 01.07.2021 - Separated code into function in canvasInGameHUD, created scoreboard template with fields ready to be hooked up to players, learned how to extend NetworkManager and implemented disconnect message sending on chat
 
 09.07.2021 - Implemented first working scoreboard
+
 10.07.2021 - Improved scoreboard but can do better
 10.07.2021 - I tried to sync kills and deaths with a hook function that would get called on every player when kills or deaths change value and update an internal playerScript scoreboard player list.
 When a player would join they create a new empty list with capacity maxConnections and call a command to server (CmdSetupPlayer) to insert playerName into every single connected client by using ClientRpc function
@@ -15,3 +16,10 @@ we would call a clientRPC
 	_dcPlayerScript.RpcRemoveFromScoreboard(string _playerName)
 to tell every connected client to remove that player from their scoreboard.
 The problem i encountered and couldn't solve is that when from inside a [Command] tagged function call a ClientRpc (for example RpcUpdateScoreboard()) i would get that the scoreboardPlayerList is null error.
+
+11.07.2021 - Watched Unity Animation System playlist tutorial from youtuber iHeartGameDev
+https://youtube.com/playlist?list=PLwyUzJb_FNeTQwyGujWRLqnfKpV-cj-eO
+12.07.2021 - Continued research, started playing around with animation state machine1
+12.07.2021 - Implemented working test animation (running, crouching, idle) 
+
+

@@ -35,10 +35,15 @@ public class PlayerControllerTest : MonoBehaviour
     private float xRot;
     private Vector3 rotation;
 
+    private bool gamePaused;
+
+    private const float runMoveSpeed = 6f;
+    private const float crouchMoveSpeed = 3f;
+
     private void Awake()
     {
         charCtrl = GetComponent<CharacterController>();
-        moveSpeed = 6f;
+        moveSpeed = runMoveSpeed;
         gravity = 0f;
         gravityConstant = 1f;
         jumpConstant = 18f;
@@ -53,22 +58,44 @@ public class PlayerControllerTest : MonoBehaviour
 
         inAirVelocity = Vector3.zero;
 
-        cameraOffset = new Vector3(0.0f, 0.4f, 0.0f);
+        cameraOffset = new Vector3(1f, 1.6f, -2.0f);
         Camera.main.transform.SetParent(transform);
         Camera.main.transform.localPosition = cameraOffset;
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
-        lookSensitivityH = 5f;
-        lookSensitivityV = 5f;
+        lookSensitivityH = 10f;
+        lookSensitivityV = 2f;
         cameraRotationXLimit = 70f;
         currentCameraRotationX = 0f;
         rotationMultiplier = 100f;
         xRot = 0f;
         rotation = Vector3.zero;
-}
+        gamePaused = false;
+    }
 
-    // Update is called once per frame
-    void Update()
+    private void Start()
     {
+        // Lock cursor and set it to be invisible
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    private void Update()
+    {
+        if (!gamePaused && Input.GetKeyDown(KeyCode.Escape)) 
+        {
+            gamePaused = true;
+            // Unlock cursor and set it to be visible
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        if (gamePaused && Input.GetMouseButtonDown(0))
+        {
+            gamePaused = false;
+            // Lock cursor and set it to be invisible
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
         UpdateGrounded();
 
         // Handle movement
@@ -77,6 +104,15 @@ public class PlayerControllerTest : MonoBehaviour
             // Handle Move input
             float _movX = Input.GetAxisRaw("Horizontal");
             float _movZ = Input.GetAxisRaw("Vertical");
+            bool isCrouching = Input.GetKey(KeyCode.LeftControl);
+            if (isCrouching)
+            {
+                moveSpeed = crouchMoveSpeed;
+            }
+            else
+            {
+                moveSpeed = runMoveSpeed;
+            }
 
             if (_movX != 0 || _movZ != 0) // Has moved
             {
@@ -86,7 +122,10 @@ public class PlayerControllerTest : MonoBehaviour
                 // Calculate velocity and apply movement
                 Vector3 _velocity = (_movHorizontal + _movVertical).normalized * moveSpeed;
                 inAirVelocity = _velocity;
-                charCtrl.Move(_velocity * Time.deltaTime);
+                if (!gamePaused)
+                {
+                    charCtrl.Move(_velocity * Time.deltaTime);
+                }
             }
             else /* Hasn't moved but is grounded */ { inAirVelocity = Vector3.zero; }
         }
@@ -102,7 +141,7 @@ public class PlayerControllerTest : MonoBehaviour
         }
 
         // Check if the player tries to jump
-        if (Input.GetButtonDown("Jump") && isGrounded) { mustJump = true; }
+        if (Input.GetButtonDown("Jump") && isGrounded && !gamePaused) { mustJump = true; }
 
         // Calculate rotation only to rotate player (not camera) on horizontal axis (turning around)
         float _yRot = Input.GetAxisRaw("Mouse X");
@@ -153,6 +192,7 @@ public class PlayerControllerTest : MonoBehaviour
 
     private void PerformRotation()
     {
+        if (gamePaused) { return; }
         if (rotation != Vector3.zero)
         {
             transform.rotation = (transform.rotation * Quaternion.Euler(rotation * Time.deltaTime * rotationMultiplier));
