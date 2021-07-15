@@ -1,0 +1,8 @@
+--- Very low priority ---
+
+Fix camera so it doesn't clips through walls giving the player "wall hack"
+
+Turning around (horizontal) in idle is just rotating the player mesh (no animation going on)
+
+
+

@@ -5,6 +5,7 @@ using UnityEngine;
 public class AnimationStateControllerTest : MonoBehaviour
 {
     private Animator animator;
+    private PlayerControllerTest playerController;
 
     [SerializeField]
     private float acceleration;
@@ -13,18 +14,22 @@ public class AnimationStateControllerTest : MonoBehaviour
 
     private float velocityX;
     private float velocityZ;
+    private float verticalAim;
 
     private int isCrouchingHash;
     private int velocityXHash;
     private int velocityZHash;
+    private int verticalAimHash;
 
     private void Awake()
     {
         animator = GetComponent<Animator>();
+        playerController = GetComponent<PlayerControllerTest>();
         acceleration = 5.0f;
         deceleration = 4.0f;
         velocityX = 0.0f;
         velocityZ = 0.0f;
+        verticalAim = 0.0f;
     }
 
     private void Start()
@@ -32,6 +37,7 @@ public class AnimationStateControllerTest : MonoBehaviour
         velocityXHash = Animator.StringToHash("velocityX");
         velocityZHash = Animator.StringToHash("velocityZ");
         isCrouchingHash = Animator.StringToHash("isCrouching");
+        verticalAimHash = Animator.StringToHash("verticalAim");
     }
 
     private void Update()
@@ -111,5 +117,11 @@ public class AnimationStateControllerTest : MonoBehaviour
 
         animator.SetFloat(velocityXHash, velocityX);
         animator.SetFloat(velocityZHash, velocityZ);
+        animator.SetFloat(verticalAimHash, verticalAim);
+    }
+
+    public void SetVerticalAim(float _verticalAim)
+    {
+        verticalAim = _verticalAim;
     }
 }

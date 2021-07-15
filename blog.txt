@@ -21,5 +21,6 @@ The problem i encountered and couldn't solve is that when from inside a [Command
 https://youtube.com/playlist?list=PLwyUzJb_FNeTQwyGujWRLqnfKpV-cj-eO
 12.07.2021 - Continued research, started playing around with animation state machine1
 12.07.2021 - Implemented working test animation (running, crouching, idle) 
-
-
+Failed converting rig from generic to humanoid without ruining the animation
+13.07.2021 - Concluded it is not easy to convert generic rig and animations to humanoid without losing animation precision. Hence i stick to generic and YBot character.
+14.07.2021 - 15.07.2021 - Made separate generic animations and blend trees for aiming up and down in a test scene
