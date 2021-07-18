@@ -5,7 +5,6 @@ using UnityEngine;
 public class AnimationStateControllerTest : MonoBehaviour
 {
     private Animator animator;
-    private PlayerControllerTest playerController;
 
     [SerializeField]
     private float acceleration;
@@ -15,21 +14,26 @@ public class AnimationStateControllerTest : MonoBehaviour
     private float velocityX;
     private float velocityZ;
     private float verticalAim;
+    private bool isGrounded;
+    private bool mustJump;
 
     private int isCrouchingHash;
     private int velocityXHash;
     private int velocityZHash;
     private int verticalAimHash;
+    private int isGroundedHash;
+    private int mustJumpHash;
 
     private void Awake()
     {
         animator = GetComponent<Animator>();
-        playerController = GetComponent<PlayerControllerTest>();
         acceleration = 5.0f;
         deceleration = 4.0f;
         velocityX = 0.0f;
         velocityZ = 0.0f;
         verticalAim = 0.0f;
+        isGrounded = true;
+        mustJump = false;
     }
 
     private void Start()
@@ -38,6 +42,8 @@ public class AnimationStateControllerTest : MonoBehaviour
         velocityZHash = Animator.StringToHash("velocityZ");
         isCrouchingHash = Animator.StringToHash("isCrouching");
         verticalAimHash = Animator.StringToHash("verticalAim");
+        isGroundedHash = Animator.StringToHash("isGrounded");
+        mustJumpHash = Animator.StringToHash("mustJump");
     }
 
     private void Update()
@@ -48,7 +54,7 @@ public class AnimationStateControllerTest : MonoBehaviour
         bool _backwardPressed = Input.GetKey(KeyCode.S);
         bool _leftPressed     = Input.GetKey(KeyCode.A);
         bool _rightPressed    = Input.GetKey(KeyCode.D);
-
+        bool _jumpPressed     = Input.GetKey(KeyCode.Space);
 
 
         // Crouch animation implementation
@@ -113,15 +119,32 @@ public class AnimationStateControllerTest : MonoBehaviour
             velocityX = Mathf.Clamp(velocityX + Time.deltaTime * acceleration, -1.0f, 1.0f);
         }
 
-        
+
+
 
         animator.SetFloat(velocityXHash, velocityX);
         animator.SetFloat(velocityZHash, velocityZ);
         animator.SetFloat(verticalAimHash, verticalAim);
+        animator.SetBool(isGroundedHash, isGrounded);
+        if (mustJump)
+        {
+            animator.SetBool(mustJumpHash, mustJump);
+            mustJump = false;
+        } else { animator.SetBool(mustJumpHash, false); }
     }
 
     public void SetVerticalAim(float _verticalAim)
     {
         verticalAim = _verticalAim;
+    }
+
+    public void SetIsGrounded(bool _isGrounded)
+    {
+        isGrounded = _isGrounded;
+    }
+
+    public void SetMustJump(bool _mustJump)
+    {
+        mustJump = _mustJump;
     }
 }

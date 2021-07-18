@@ -13,11 +13,13 @@ public class PlayerControllerTest : MonoBehaviour
     private float gravityConstant;
 
     [SerializeField]
-    private float jumpConstant;
+    private float jumpHeight;
 
-    private bool isGrounded;
-    private bool mustJump;
-    private int groundLayerIndex;
+    public bool isGrounded;
+    private Vector3 jmp;
+    private int numberJumps;
+    private int maxJumps;
+    private int walkableLayerIndex;
     private Vector3 inAirVelocity;
 
     private Vector3 cameraOffset;
@@ -39,10 +41,13 @@ public class PlayerControllerTest : MonoBehaviour
     private bool gamePaused;
 
     private const float runMoveSpeed = 6f;
-    private const float crouchMoveSpeed = 3f;
+    //private const float crouchMoveSpeed = 3f;
+    private const float crouchMoveSpeed = 1f;
 
     [SerializeField]
     private Transform weaponLocation;
+
+
 
     private void Awake()
     {
@@ -52,31 +57,34 @@ public class PlayerControllerTest : MonoBehaviour
         charCtrl.skinWidth = 0.03f;
         charCtrl.minMoveDistance = 0.001f;
         charCtrl.radius = 0.3f;
-        charCtrl.height = 1.73f;
-        charCtrl.center = new Vector3(0.0f, charCtrl.height / 2, 0.0f);
+        charCtrl.height = 1.68f;
+        charCtrl.center = new Vector3(0.0f, charCtrl.height / 2.0f, 0.0f);
 
         moveSpeed = runMoveSpeed;
         gravity = 0f;
         gravityConstant = 1f;
-        jumpConstant = 18f;
-        isGrounded = true;
-        mustJump = false;
+        jumpHeight = 12f;
+        isGrounded = false;
 
-        groundLayerIndex = LayerMask.NameToLayer("Ground");
-        if (groundLayerIndex == -1) // Check if ground layer is valid
+        jmp = Vector3.zero;
+        numberJumps = 0;
+        maxJumps = 2;
+
+        walkableLayerIndex = LayerMask.NameToLayer("Walkable");
+        if (walkableLayerIndex == -1) // Check if ground layer is valid
         {
-            Debug.LogError("Ground layer does not exist");
+            Debug.LogError("Walkable layer does not exist");
         }
 
         inAirVelocity = Vector3.zero;
 
-        cameraOffset = new Vector3(0.25f, 1.85f, -2.4f);
+        cameraOffset = new Vector3(0.25f, 1.85f, -3f);
         Camera.main.transform.SetParent(transform);
         Camera.main.transform.localPosition = cameraOffset;
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
         lookSensitivityH = 10f;
         lookSensitivityV = 4f;
-        cameraRotationXLimit = 45f;
+        cameraRotationXLimit = 60f;
         currentCameraRotationX = 0f;
         rotationMultiplier = 100f;
         xRot = 0f;
@@ -111,7 +119,7 @@ public class PlayerControllerTest : MonoBehaviour
             Cursor.visible = false;
         }
 
-        UpdateGrounded();
+        //UpdateGrounded();
 
         // Handle movement
         if (isGrounded)
@@ -156,7 +164,7 @@ public class PlayerControllerTest : MonoBehaviour
         }
 
         // Check if the player tries to jump
-        if (Input.GetButtonDown("Jump") && isGrounded && !gamePaused) { mustJump = true; }
+        if (Input.GetButtonDown("Jump") && numberJumps < maxJumps && !gamePaused) { jmp = Vector3.up * jumpHeight; }
 
         // Calculate rotation only to rotate player (not camera) on horizontal axis (turning around)
         float _yRot = Input.GetAxisRaw("Mouse X");
@@ -164,6 +172,8 @@ public class PlayerControllerTest : MonoBehaviour
         // Calculate camera rotation
         xRot = Input.GetAxisRaw("Mouse Y") * lookSensitivityV;
         PerformRotation();
+
+
         Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 100, Color.red, 0.2f);
         if (weaponLocation != null)
         {
@@ -174,39 +184,71 @@ public class PlayerControllerTest : MonoBehaviour
 
     private void FixedUpdate()
     {
-        HandleGravityAndJump();
-    }
-
-    private void HandleGravityAndJump()
-    {
-        // Handle jump & gravity calculations here for consistency (Always jump the same height / Always have the gravity pull the same)
-        if (mustJump)
-        {
-            mustJump = false;
-            isGrounded = false;
-            gravity = jumpConstant * Time.deltaTime;
-            charCtrl.Move(Vector3.up * jumpConstant * Time.deltaTime);
-        }
-        {
-            gravity = isGrounded ? 0f : (gravity - gravityConstant * Time.deltaTime);
-        }
-        if (gravity != 0)
-        {
-            charCtrl.Move(Vector3.up * gravity);
-        }
-
+        ApplyGravity();
+        PerformJump();
+        //CheckCollisionFlags();
+        UpdateGrounded();
     }
 
     private void UpdateGrounded()
     {
-        // Check if the player is grounded
-        if (charCtrl.collisionFlags == CollisionFlags.Below)  // Touching the edge of any object (not completely on but on the edge)
-        {  // If we are completely on an object the if block will return false
-            isGrounded = true;
-        }  // I need the above check because i figured it will return true only when collider is on the edge of an object
-        else  // We are not touching the edge so check if we are completely on an object that is labeled as "Ground"
+        /* (charCtrl.collisionFlags == CollisionFlags.Below) means "Only touching ground, nothing else!"
+        and the statement will be true only when we are on the edges of an object because of how collisions
+        work in my case. I am getting the "Free floating" at all times when just moving on any surface and
+        i don't know why. */
+        if (charCtrl.collisionFlags == CollisionFlags.Below)
         {
-            isGrounded = Physics.Raycast(transform.position, Vector3.down, charCtrl.height / 2f + charCtrl.skinWidth, 1 << groundLayerIndex);
+            isGrounded = true;
+        }
+        else
+        {
+            isGrounded = Physics.Raycast(
+                transform.position + Vector3.up * charCtrl.height / 2f,
+                Vector3.down,
+                charCtrl.height / 2f + charCtrl.skinWidth,
+                1 << walkableLayerIndex);
+        }
+        Debug.DrawRay(transform.position + Vector3.up * charCtrl.height / 2f, Vector3.down * (charCtrl.height / 2f + charCtrl.skinWidth), Color.red, 0.02f);
+
+        if (isGrounded) { numberJumps = 0; }  // Set number of jumps back to 0 because we hit the ground
+        animationController.SetIsGrounded(isGrounded);
+    }
+
+    private void CheckCollisionFlags()
+    {
+        if (charCtrl.collisionFlags == CollisionFlags.None)
+        {
+            Debug.Log("Free floating!");
+        }
+
+        if ((charCtrl.collisionFlags & CollisionFlags.Sides) != 0)
+        {
+            Debug.Log("Touching sides!");
+        }
+
+        if (charCtrl.collisionFlags == CollisionFlags.Sides)
+        {
+            Debug.Log("Only touching sides, nothing else!");
+        }
+
+        if ((charCtrl.collisionFlags & CollisionFlags.Above) != 0)
+        {
+            Debug.Log("Touching Ceiling!");
+        }
+
+        if (charCtrl.collisionFlags == CollisionFlags.Above)
+        {
+            Debug.Log("Only touching Ceiling, nothing else!");
+        }
+
+        if ((charCtrl.collisionFlags & CollisionFlags.Below) != 0)
+        {
+            Debug.Log("Touching ground!");
+        }
+
+        if (charCtrl.collisionFlags == CollisionFlags.Below)
+        {
+            Debug.Log("Only touching ground, nothing else!");
         }
     }
 
@@ -235,6 +277,37 @@ public class PlayerControllerTest : MonoBehaviour
                 // Apply third person rotation to camera
                 Camera.main.transform.RotateAround(transform.position, transform.right, currentCameraRotationX - prevCameraRotationX);
             }
+        }
+    }
+
+    /// <summary> Applies gravity to player </summary>
+    private void ApplyGravity()
+    {
+        if (isGrounded)
+        {
+            gravity = 0f;
+        }
+        else
+        {
+            gravity -= gravityConstant * Time.deltaTime;
+            charCtrl.Move(Vector3.up * gravity);
+        }
+    }
+
+    /// <summary> Actual code for performing jump </summary>
+    void PerformJump()
+    {
+        // This evaluates to true if we are still allowed to jump
+        //            |
+        //            v
+        //  |--------------------|    |-----------------|
+        if (numberJumps < maxJumps && jmp != Vector3.zero)
+        {
+            gravity = jmp.y * Time.deltaTime;
+            charCtrl.Move(jmp * Time.deltaTime);
+            ++numberJumps;
+            jmp = Vector3.zero;  // Used to know that we "consumed" the jump so we don't keep jumping after we hit the ground
+            animationController.SetMustJump(true);
         }
     }
 }
