@@ -20,6 +20,7 @@ public class PlayerControllerTest : MonoBehaviour
     private int numberJumps;
     private int maxJumps;
     private int walkableLayerIndex;
+    private int rampLayerIndex;
     private Vector3 inAirVelocity;
 
     private Vector3 cameraOffset;
@@ -31,7 +32,9 @@ public class PlayerControllerTest : MonoBehaviour
     private float lookSensitivityV;
 
     [SerializeField]
-    private float cameraRotationXLimit;
+    private float cameraRotationXLimitDown;
+    [SerializeField]
+    private float cameraRotationXLimitUp;
 
     private float currentCameraRotationX;
     private float rotationMultiplier;
@@ -41,8 +44,6 @@ public class PlayerControllerTest : MonoBehaviour
     private bool gamePaused;
 
     private const float runMoveSpeed = 6f;
-    //private const float crouchMoveSpeed = 3f;
-    private const float crouchMoveSpeed = 1f;
 
     [SerializeField]
     private Transform weaponLocation;
@@ -75,16 +76,22 @@ public class PlayerControllerTest : MonoBehaviour
         {
             Debug.LogError("Walkable layer does not exist");
         }
+        rampLayerIndex = LayerMask.NameToLayer("Ramp");
+        if (rampLayerIndex == -1) // Check if ground layer is valid
+        {
+            Debug.LogError("Ramp layer does not exist");
+        }
 
         inAirVelocity = Vector3.zero;
 
-        cameraOffset = new Vector3(0.25f, 1.85f, -3f);
+        cameraOffset = new Vector3(0.5f, 1.4f, -2f);
         Camera.main.transform.SetParent(transform);
         Camera.main.transform.localPosition = cameraOffset;
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
         lookSensitivityH = 10f;
         lookSensitivityV = 4f;
-        cameraRotationXLimit = 60f;
+        cameraRotationXLimitDown = 75f;
+        cameraRotationXLimitUp = 75f;
         currentCameraRotationX = 0f;
         rotationMultiplier = 100f;
         xRot = 0f;
@@ -127,15 +134,6 @@ public class PlayerControllerTest : MonoBehaviour
             // Handle Move input
             float _movX = Input.GetAxisRaw("Horizontal");
             float _movZ = Input.GetAxisRaw("Vertical");
-            bool isCrouching = Input.GetKey(KeyCode.LeftControl);
-            if (isCrouching)
-            {
-                moveSpeed = crouchMoveSpeed;
-            }
-            else
-            {
-                moveSpeed = runMoveSpeed;
-            }
 
             if (_movX != 0 || _movZ != 0) // Has moved
             {
@@ -174,11 +172,11 @@ public class PlayerControllerTest : MonoBehaviour
         PerformRotation();
 
 
-        Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 100, Color.red, 0.2f);
+        //Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 100, Color.red, 0.2f);
         if (weaponLocation != null)
         {
-            Debug.DrawRay(weaponLocation.transform.position, weaponLocation.transform.forward * 100, Color.blue, 0.2f);
-            Debug.DrawRay(weaponLocation.transform.position, Camera.main.transform.forward * 100, Color.green, 0.2f);
+            //Debug.DrawRay(weaponLocation.transform.position, weaponLocation.transform.forward * 100, Color.blue, 0.2f);
+            //Debug.DrawRay(weaponLocation.transform.position, Camera.main.transform.forward * 100, Color.green, 0.2f);
         }
     }
 
@@ -192,26 +190,94 @@ public class PlayerControllerTest : MonoBehaviour
 
     private void UpdateGrounded()
     {
-        /* (charCtrl.collisionFlags == CollisionFlags.Below) means "Only touching ground, nothing else!"
-        and the statement will be true only when we are on the edges of an object because of how collisions
-        work in my case. I am getting the "Free floating" at all times when just moving on any surface and
-        i don't know why. */
-        if (charCtrl.collisionFlags == CollisionFlags.Below)
+        int groundMask = 1 << walkableLayerIndex | 1 << rampLayerIndex;
+        /* First if is going to sometimes detect that we are touching the ground, but not always. Hence the
+        need for the else statement. */
+        if ((charCtrl.collisionFlags & CollisionFlags.Below) != 0)
         {
             isGrounded = true;
         }
         else
         {
+            // Raycast at circle center
             isGrounded = Physics.Raycast(
                 transform.position + Vector3.up * charCtrl.height / 2f,
                 Vector3.down,
-                charCtrl.height / 2f + charCtrl.skinWidth,
-                1 << walkableLayerIndex);
+                charCtrl.height / 2f + charCtrl.skinWidth * 2f,
+                groundMask);
+
+            if (!isGrounded)
+            {
+                int _circlePrecision = 4;
+                float _angleOffset = 360f / _circlePrecision;
+                float _currentAngle = 0f;
+
+                // Raycast close to circle edges
+                for (int i = 0; i < _circlePrecision; ++i)
+                {
+                    Vector3 _rayPosition = transform.position + Vector3.up * charCtrl.height / 2f;
+                    _rayPosition.x += Mathf.Cos(Mathf.Deg2Rad * _currentAngle) * charCtrl.radius * 0.8f;
+                    _rayPosition.z += Mathf.Sin(Mathf.Deg2Rad * _currentAngle) * charCtrl.radius * 0.8f;
+
+                    isGrounded = Physics.Raycast(
+                        _rayPosition,
+                        Vector3.down,
+                        charCtrl.height / 2f + charCtrl.skinWidth * 2,
+                        groundMask);
+
+                    if (isGrounded) { break; }
+                    _currentAngle += _angleOffset;
+                }
+            }
         }
-        Debug.DrawRay(transform.position + Vector3.up * charCtrl.height / 2f, Vector3.down * (charCtrl.height / 2f + charCtrl.skinWidth), Color.red, 0.02f);
 
         if (isGrounded) { numberJumps = 0; }  // Set number of jumps back to 0 because we hit the ground
-        animationController.SetIsGrounded(isGrounded);
+
+        // Determine if we are on a ramp object.
+        bool _onRamp = Physics.Raycast(
+            transform.position + Vector3.up * charCtrl.height / 2f,
+            Vector3.down,
+            charCtrl.height / 2f + charCtrl.skinWidth * 10f,
+            1 << rampLayerIndex);
+
+        // The following if will make sure we don't transit between airborne and stand locomotion animations when going down a ramp.
+        if (_onRamp)
+        {
+            animationController.SetIsGrounded(true);
+        }
+        else
+        {
+            animationController.SetIsGrounded(isGrounded);
+        }
+
+        // Debug rays
+        //Debug.DrawRay(transform.position + Vector3.up * charCtrl.height / 2f,
+        //    Vector3.down * (charCtrl.height / 2f + charCtrl.skinWidth * 10f),
+        //    Color.yellow,
+        //    0.02f);
+        //Debug.DrawRay(transform.position + Vector3.up * charCtrl.height / 2f,
+        //    Vector3.down * (charCtrl.height / 2f + charCtrl.skinWidth * 2f),
+        //    Color.red,
+        //    0.02f);
+        //{
+        //    int _circlePrecision = 4;
+        //    float _angleOffset = 360f / _circlePrecision;
+        //    float _currentAngle = 0f;
+
+        //    // Raycast close to circle edges
+        //    for (int i = 0; i < _circlePrecision; ++i)
+        //    {
+        //        Vector3 _rayPosition = transform.position + Vector3.up * charCtrl.height / 2f;
+        //        _rayPosition.x += Mathf.Cos(Mathf.Deg2Rad * _currentAngle) * charCtrl.radius * 0.8f;
+        //        _rayPosition.z += Mathf.Sin(Mathf.Deg2Rad * _currentAngle) * charCtrl.radius * 0.8f;
+
+        //        Debug.DrawRay(_rayPosition,
+        //            Vector3.down * (charCtrl.height / 2f + charCtrl.skinWidth * 2f),
+        //            Color.blue,
+        //            0.02f);
+        //        _currentAngle += _angleOffset;
+        //    }
+        //}
     }
 
     private void CheckCollisionFlags()
@@ -265,17 +331,28 @@ public class PlayerControllerTest : MonoBehaviour
             // Set rotation and clamp it
             float prevCameraRotationX = currentCameraRotationX;
             currentCameraRotationX -= xRot * Time.deltaTime * rotationMultiplier;
-            currentCameraRotationX = Mathf.Clamp(currentCameraRotationX, -cameraRotationXLimit, cameraRotationXLimit);
+            currentCameraRotationX = Mathf.Clamp(currentCameraRotationX, -cameraRotationXLimitUp, cameraRotationXLimitDown);
 
             if (prevCameraRotationX != currentCameraRotationX)  // Camera rotation changed
             {
                 // Set animation vertical aim
-                animationController.SetVerticalAim(-currentCameraRotationX / cameraRotationXLimit);
+                float _verticalAim = 0f;
+                if (currentCameraRotationX < 0)
+                {
+                    _verticalAim = -currentCameraRotationX / cameraRotationXLimitUp;
+                }
+                else
+                {
+                    _verticalAim = -currentCameraRotationX / cameraRotationXLimitDown;
+                }
+                animationController.SetVerticalAim(_verticalAim);
 
                 // Apply first person rotation to camera
                 //Camera.main.transform.localEulerAngles = new Vector3(currentCameraRotationX, 0f, 0f);
                 // Apply third person rotation to camera
-                Camera.main.transform.RotateAround(transform.position, transform.right, currentCameraRotationX - prevCameraRotationX);
+                Camera.main.transform.RotateAround(transform.position + Vector3.up * charCtrl.height / 2f,
+                    transform.right,
+                    currentCameraRotationX - prevCameraRotationX);
             }
         }
     }
@@ -295,7 +372,7 @@ public class PlayerControllerTest : MonoBehaviour
     }
 
     /// <summary> Actual code for performing jump </summary>
-    void PerformJump()
+    private void PerformJump()
     {
         // This evaluates to true if we are still allowed to jump
         //            |

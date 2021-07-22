@@ -13,15 +13,14 @@ public class AnimationStateControllerTest : MonoBehaviour
 
     private float velocityX;
     private float velocityZ;
-    private float verticalAim;
-    private bool isGrounded;
     private bool mustJump;
+    private bool mustResetJump;
 
-    private int isCrouchingHash;
     private int velocityXHash;
     private int velocityZHash;
     private int verticalAimHash;
     private int isGroundedHash;
+    private int isShootingHash;
     private int mustJumpHash;
 
     private void Awake()
@@ -31,49 +30,47 @@ public class AnimationStateControllerTest : MonoBehaviour
         deceleration = 4.0f;
         velocityX = 0.0f;
         velocityZ = 0.0f;
-        verticalAim = 0.0f;
-        isGrounded = true;
         mustJump = false;
+        mustResetJump = false;
     }
 
     private void Start()
     {
         velocityXHash = Animator.StringToHash("velocityX");
         velocityZHash = Animator.StringToHash("velocityZ");
-        isCrouchingHash = Animator.StringToHash("isCrouching");
         verticalAimHash = Animator.StringToHash("verticalAim");
         isGroundedHash = Animator.StringToHash("isGrounded");
+        isShootingHash = Animator.StringToHash("isShooting");
         mustJumpHash = Animator.StringToHash("mustJump");
     }
 
     private void Update()
     {
-        bool _isCrouching = animator.GetBool(isCrouchingHash);
-        bool _crouchPressed   = Input.GetKey(KeyCode.LeftControl);
+        MoveForwardBackward();
+        MoveLeftRight();
+        PerformJump();
+        ShootWeapon();
+    }
+
+    public void SetVerticalAim(float _verticalAim)
+    {
+        animator.SetFloat(verticalAimHash, _verticalAim);
+    }
+
+    public void SetIsGrounded(bool _isGrounded)
+    {
+        animator.SetBool(isGroundedHash, _isGrounded);
+    }
+
+    public void SetMustJump(bool _mustJump)
+    {
+        mustJump = _mustJump;
+    }
+
+    private void MoveForwardBackward()
+    {
         bool _forwardPressed  = Input.GetKey(KeyCode.W);
         bool _backwardPressed = Input.GetKey(KeyCode.S);
-        bool _leftPressed     = Input.GetKey(KeyCode.A);
-        bool _rightPressed    = Input.GetKey(KeyCode.D);
-        bool _jumpPressed     = Input.GetKey(KeyCode.Space);
-
-
-        // Crouch animation implementation
-        if (_crouchPressed)
-        {
-            if (!_isCrouching)  // Was not in crouching state
-            {
-                animator.SetBool(isCrouchingHash, true);
-            }
-        }
-        else  // crouch not pressed
-        {
-            if (_isCrouching)  // Was in crouching state
-            {
-                animator.SetBool(isCrouchingHash, false);
-            }
-        }
-
-
 
         // Forward/Backward animation implementation
         if (_forwardPressed && _backwardPressed || !_forwardPressed && !_backwardPressed)  // Decelerate forward/backward movement
@@ -95,8 +92,13 @@ public class AnimationStateControllerTest : MonoBehaviour
         {
             velocityZ = Mathf.Clamp(velocityZ - Time.deltaTime * acceleration, -1.0f, 1.0f);
         }
+        animator.SetFloat(velocityZHash, velocityZ);
+    }
 
-
+    private void MoveLeftRight()
+    {
+        bool _leftPressed  = Input.GetKey(KeyCode.A);
+        bool _rightPressed = Input.GetKey(KeyCode.D);
 
         // Left/Right animation implementation
         if (_leftPressed && _rightPressed || !_leftPressed && !_rightPressed)  // Decelerate left/right movement
@@ -118,33 +120,31 @@ public class AnimationStateControllerTest : MonoBehaviour
         {
             velocityX = Mathf.Clamp(velocityX + Time.deltaTime * acceleration, -1.0f, 1.0f);
         }
-
-
-
-
         animator.SetFloat(velocityXHash, velocityX);
-        animator.SetFloat(velocityZHash, velocityZ);
-        animator.SetFloat(verticalAimHash, verticalAim);
-        animator.SetBool(isGroundedHash, isGrounded);
+    }
+
+    private void PerformJump()
+    {
         if (mustJump)
         {
-            animator.SetBool(mustJumpHash, mustJump);
+            animator.SetBool(mustJumpHash, true);
             mustJump = false;
-        } else { animator.SetBool(mustJumpHash, false); }
+            mustResetJump = true;
+        }
+        else if (mustResetJump)
+        {
+            animator.SetBool(mustJumpHash, false);
+            mustResetJump = false;
+        }
     }
 
-    public void SetVerticalAim(float _verticalAim)
+    private void ShootWeapon()
     {
-        verticalAim = _verticalAim;
+        animator.SetBool(isShootingHash, Input.GetKey(KeyCode.Mouse0));
     }
 
-    public void SetIsGrounded(bool _isGrounded)
+    private void TestShootingEvent()
     {
-        isGrounded = _isGrounded;
-    }
-
-    public void SetMustJump(bool _mustJump)
-    {
-        mustJump = _mustJump;
+        Debug.Log("called TestShootingEvent in AnimationStateControllerTest");
     }
 }

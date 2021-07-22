@@ -1,3 +1,6 @@
+--- High priority ----
+Merge Lobby script into CanvasLobbyHUD.
+
 --- Very low priority ---
 
 Fix camera so it doesn't clips through walls giving the player "wall hack"
