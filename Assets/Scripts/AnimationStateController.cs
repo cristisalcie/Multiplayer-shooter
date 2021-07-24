@@ -5,30 +5,13 @@ public class AnimationStateController : NetworkBehaviour
 {
     private Animator animator;
 
-    [SerializeField]
     private float acceleration;
-    [SerializeField]
     private float deceleration;
 
-    [SerializeField]
-    [SyncVar]
     private float velocityX;
-    [SerializeField]
-    [SyncVar]
     private float velocityZ;
-    [SerializeField]
-    [SyncVar]
     private bool mustJump;
-    [SerializeField]
-    [SyncVar]
-    private bool isShooting;
     private bool mustResetJump;
-    [SerializeField]
-    [SyncVar]
-    private bool isGrounded;
-    [SerializeField]
-    [SyncVar]
-    private float verticalAim;
 
     private int velocityXHash;
     private int velocityZHash;
@@ -46,7 +29,6 @@ public class AnimationStateController : NetworkBehaviour
         velocityZ = 0.0f;
         mustJump = false;
         mustResetJump = false;
-        isShooting = false;
     }
 
     private void Start()
@@ -61,49 +43,28 @@ public class AnimationStateController : NetworkBehaviour
 
     private void Update()
     {
-        if (hasAuthority)
-        {
-            Move();
-            PerformJump();
-            ShootWeapon();
-        }
-        else
-        {
-            // No authority over variables, however we should animate the character that has this script attached.
-            animator.SetFloat(velocityXHash, velocityX);
-            animator.SetFloat(velocityZHash, velocityZ);
-            animator.SetBool(mustJumpHash, mustJump);
-            animator.SetBool(isShootingHash, isShooting);
-        }
-
-        // Received from server variables and we update the animator from the same place
-        animator.SetBool(isGroundedHash, isGrounded);
-        animator.SetFloat(verticalAimHash, verticalAim);
-
+        // Let us be local player X. There is no point in running this script section on player Y's attached script from player X client
+        // In other words if we don't have authority to move this player return
+        if (!hasAuthority) { return; }
+        MoveForwardBackward();
+        MoveLeftRight();
+        PerformJump();
+        ShootWeapon();
     }
 
-    [Command]
     public void SetVerticalAim(float _verticalAim)
     {
-        verticalAim = _verticalAim;
+        animator.SetFloat(verticalAimHash, _verticalAim);
     }
 
-    [Command]
     public void SetIsGrounded(bool _isGrounded)
     {
-        isGrounded = _isGrounded;
+        animator.SetBool(isGroundedHash, _isGrounded);
     }
 
     public void SetMustJump(bool _mustJump)
     {
         mustJump = _mustJump;
-    }
-
-    private void Move()
-    {
-        MoveForwardBackward();
-        MoveLeftRight();
-        CmdSyncVelocity(velocityX, velocityZ);
     }
 
     private void MoveForwardBackward()
@@ -166,14 +127,12 @@ public class AnimationStateController : NetworkBehaviour
     {
         if (mustJump)
         {
-            CmdSyncJump(true);
             animator.SetBool(mustJumpHash, true);
             mustJump = false;
             mustResetJump = true;
         }
         else if (mustResetJump)
         {
-            CmdSyncJump(false);
             animator.SetBool(mustJumpHash, false);
             mustResetJump = false;
         }
@@ -181,37 +140,11 @@ public class AnimationStateController : NetworkBehaviour
 
     private void ShootWeapon()
     {
-        bool _isShooting = Input.GetKey(KeyCode.Mouse0);
-        isShooting = _isShooting;
-        CmdSyncShoot(isShooting);
-        animator.SetBool(isShootingHash, isShooting);
+        animator.SetBool(isShootingHash, Input.GetKey(KeyCode.Mouse0));
     }
 
     private void TestShootingEvent()
     {
         Debug.Log("called TestShootingEvent in AnimationStateControllerTest");
     }
-
-    #region Commands
-
-    [Command]
-    private void CmdSyncVelocity(float _velocityX, float _velocityZ)
-    {
-        velocityX = _velocityX;
-        velocityZ = _velocityZ;
-    }
-
-    [Command]
-    private void CmdSyncJump(bool _mustJump)
-    {
-        mustJump = _mustJump;
-    }
-
-    [Command]
-    private void CmdSyncShoot(bool _isShooting)
-    {
-        isShooting = _isShooting;
-    }
-
-    #endregion
 }
