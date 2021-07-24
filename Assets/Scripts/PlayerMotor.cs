@@ -3,73 +3,152 @@ using UnityEngine;
 
 public class PlayerMotor : NetworkBehaviour
 {
-    private Rigidbody rb;
+    private AnimationStateController animationController;
     private CharacterController charCtrl;
 
-    [SyncVar]
-    private Vector3 velocity;
+    #region Movement variables/constants
 
-    [SyncVar]
+    private Vector3 velocity;
     private Vector3 rotation;
 
-    [SyncVar]
-    private float cameraRotationX;
+    #endregion
 
+    #region Camera variables/constants
+
+    private float cameraRotationX;
+    private Transform rawCameraTransform;
+    private float cameraToPlayerDistance;
     private float currentCameraRotationX;
     private float rotationMultiplier;
+    private Vector3 cameraOffset;
+    [SerializeField]
+    private float lookUpLimit;
+    [SerializeField]
+    private float lookDownLimit;
 
-    [SyncVar]
+    #endregion
+
+    #region Jump variables/constants
+
     private Vector3 jmp;
-
-    private int groundLayerIndex;
-    private bool isGrounded;
     private int numberJumps;
-
     private int maxJumps;
 
-    [SerializeField]
-    private GameObject weaponsHolder;
+    #endregion
 
-    [SerializeField]
-    private float cameraRotationXLimit;
+    #region Layer indexes variables/constants
 
+    private int walkableLayerIndex;
+    private int rampLayerIndex;
+    private int playerLayerIndex;
+    private int groundMask;
+
+    #endregion
+
+    #region Gravity/Momentum related variables/constants
+
+    private bool isGrounded;
     [SerializeField]
     private float gravityConstant;
-
     private float gravity;
     private Vector3 inAirVelocity;  // Used to continue going into a direction while in air
+
+    #endregion
+
 
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.isKinematic = true;  // Deactivate rigidbody
+        animationController = GetComponent<AnimationStateController>();
+
+        #region Initialize Character Controller
+
         charCtrl = GetComponent<CharacterController>();
         charCtrl.stepOffset = 0.1f;
+        charCtrl.skinWidth = 0.03f;
+        charCtrl.minMoveDistance = 0.001f;
+        charCtrl.radius = 0.3f;
+        charCtrl.height = 1.68f;
+        charCtrl.center = new Vector3(0.0f, charCtrl.height / 2.0f, 0.0f);
+
+        #endregion
+
+        #region Initialize movement variables/constants
+        
         velocity = Vector3.zero;
         rotation = Vector3.zero;
+
+        #endregion
+
+        #region Initialize camera variables/constants
+
         cameraRotationX = 0f;
         currentCameraRotationX = 0f;
         rotationMultiplier = 100f;
+        lookUpLimit = 75f;
+        lookDownLimit = -75f;
+        
+        #endregion
+
+        #region Initialize jump variables/constants
+        
         jmp = Vector3.zero;
-
-        groundLayerIndex = LayerMask.NameToLayer("Ground");
-        if (groundLayerIndex == -1) // Check if ground layer is valid
-        {
-            Debug.LogError("Ground layer does not exist");
-        }
-
-        isGrounded = false;
         numberJumps = 0;
         maxJumps = 1;
-        cameraRotationXLimit = 70f;
+        
+        #endregion
+
+        #region Initialize layer indexes variables/constants
+        
+        walkableLayerIndex = LayerMask.NameToLayer("Walkable");
+        if (walkableLayerIndex == -1) // Check if ground layer is valid
+        {
+            Debug.LogError("Walkable layer does not exist");
+        }
+        rampLayerIndex = LayerMask.NameToLayer("Ramp");
+        if (rampLayerIndex == -1) // Check if ramp layer is valid
+        {
+            Debug.LogError("Ramp layer does not exist");
+        }
+        playerLayerIndex = LayerMask.NameToLayer("Player");
+        if (playerLayerIndex == -1) // Check if player layer is valid
+        {
+            Debug.LogError("Player layer does not exist");
+        }
+        groundMask = 1 << walkableLayerIndex | 1 << rampLayerIndex;
+        
+        #endregion
+
+        #region Initialize gravity/momentum related variables/constants
+        
+        isGrounded = false;
         gravityConstant = 1f;
         gravity = 0f;
         inAirVelocity = Vector3.zero;
+        
+        #endregion
+    }
+
+    private void Start()
+    {
+        #region Initialize camera variables/constants
+        if (isLocalPlayer)  // Only the script attached to local player needs to find and get the rawCameraTransform
+        {
+            rawCameraTransform = transform.Find("RawCameraTransform");
+
+            // Raw camera transform will be set by PlayerScript to cameraOffset
+            cameraOffset = rawCameraTransform.localPosition;
+
+            cameraToPlayerDistance = Vector3.Distance(transform.position + Vector3.up * cameraOffset.y, rawCameraTransform.position);
+        }
+        #endregion
     }
 
     private void Update()
     {
+        // Let us be local player X. There is no point in running this script section on player Y's attached script from player X client
+        // In other words if we don't have authority to move this player return
+        if (!hasAuthority) { return; }
         UpdateGrounded();
         PerformMovement();
         PerformRotation();
@@ -78,8 +157,12 @@ public class PlayerMotor : NetworkBehaviour
 
     void FixedUpdate()
     {
+        // Let us be local player X. There is no point in running this script section on player Y's attached script from player X client
+        // In other words if we don't have authority to move this player return
+        if (!hasAuthority) { return; }
         ApplyGravity();
         PerformJump();
+        FixCameraPosition();
     }
 
     /// <summary> This function is responsible for movement </summary>
@@ -151,6 +234,7 @@ public class PlayerMotor : NetworkBehaviour
             charCtrl.Move(jmp * Time.deltaTime);
             ++numberJumps;
             jmp = Vector3.zero;  // Used to know that we "consumed" the jump so we don't keep jumping after we hit the ground
+            animationController.SetMustJump(true);
         }
     }
     
@@ -159,7 +243,7 @@ public class PlayerMotor : NetworkBehaviour
     {
         if (rotation != Vector3.zero)
         {
-            transform.rotation = (transform.rotation * Quaternion.Euler(rotation * Time.deltaTime * rotationMultiplier));
+            transform.rotation = transform.rotation * Quaternion.Euler(rotationMultiplier * Time.deltaTime * rotation);
         }
     }
 
@@ -169,31 +253,131 @@ public class PlayerMotor : NetworkBehaviour
         if (cameraRotationX != 0 && isLocalPlayer)
         {
             // Set rotation and clamp it
+            float prevCameraRotationX = currentCameraRotationX;
             currentCameraRotationX -= cameraRotationX * Time.deltaTime * rotationMultiplier;
-            currentCameraRotationX = Mathf.Clamp(currentCameraRotationX, -cameraRotationXLimit, cameraRotationXLimit);
-            Vector3 _newRotation = new Vector3(currentCameraRotationX, 0f, 0f);
-            
-            // Apply rotation to camera
-            Camera.main.transform.localEulerAngles = _newRotation;
-            // Move weapons (using network transform child with weaponsHolder as gameObject with client authority)
-            weaponsHolder.transform.localEulerAngles = _newRotation;
-            
+            currentCameraRotationX = Mathf.Clamp(currentCameraRotationX, lookDownLimit, lookUpLimit);
+
+            if (prevCameraRotationX != currentCameraRotationX)  // Camera rotation changed
+            {
+                // Set animation vertical aim
+                float _verticalAim;
+                if (currentCameraRotationX < 0)
+                {
+                    _verticalAim = -currentCameraRotationX / lookUpLimit;
+                }
+                else
+                {
+                    _verticalAim = currentCameraRotationX / lookDownLimit;
+                }
+                animationController.SetVerticalAim(_verticalAim);
+
+                // Apply third person rotation to camera
+                Camera.main.transform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
+                    transform.right,
+                    currentCameraRotationX - prevCameraRotationX);
+                rawCameraTransform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
+                    transform.right,
+                    currentCameraRotationX - prevCameraRotationX);
+            }
+        }
+    }
+
+    /// <summary> In case of camera collision this function will take control of the camera position. </summary>
+    private void FixCameraPosition()
+    {
+        // TODO: Add event handler to walking animations such that when the leg hit the floor we play audio of a step.
+        Vector3 _origin = transform.position + Vector3.up * cameraOffset.y;
+        Vector3 _dir = Vector3.Normalize(rawCameraTransform.position - _origin);
+
+        bool _hitObj = Physics.SphereCast(
+            _origin,
+            0.1f,  /* Sphere radius */
+            _dir,
+            out RaycastHit hitInfo,
+            cameraToPlayerDistance,
+            ~(1 << playerLayerIndex) /* Everything but player */);
+
+        if (_hitObj)
+        {
+            //Debug.Log(hitInfo.point);
+            float _clipOffset = 0.2f;
+            //Debug.Log(hitInfo.transform.gameObject.name);
+            Camera.main.transform.position = Vector3.Lerp(
+                Camera.main.transform.position,
+                hitInfo.point + hitInfo.normal * _clipOffset,
+                Time.deltaTime * 5);
+            //Debug.Log(hitInfo.normal);
+        }
+        else if (Camera.main.transform.position != rawCameraTransform.position)
+        {
+            Camera.main.transform.position = Vector3.Lerp(
+                Camera.main.transform.position,
+                rawCameraTransform.position,
+                Time.deltaTime * 5);
         }
     }
 
     /// <summary> Updates isGrounded internal boolean and resets the allowed number of jumps </summary>
     private void UpdateGrounded()
     {
-        // Check if the player is grounded
-        if (charCtrl.collisionFlags == CollisionFlags.Below)  // Touching the edge of any object (not completely on but on the edge)
-        {  // If we are completely on an object the if block will return false
-            isGrounded = true;
-        }  // I need the above check because i figured it will return true only when collider is on the edge of an object
-        else  // We are not touching the edge so check if we are completely on an object that is labeled as "Ground"
+        /* First if is going to sometimes detect that we are touching the ground, but not always. Hence the
+        need for the else statement. */
+        if ((charCtrl.collisionFlags & CollisionFlags.Below) != 0)
         {
-            isGrounded = Physics.Raycast(transform.position, Vector3.down, charCtrl.height / 2f + charCtrl.skinWidth, 1 << groundLayerIndex);
+            isGrounded = true;
         }
+        else
+        {
+            // Raycast at circle center
+            isGrounded = Physics.Raycast(
+                transform.position + Vector3.up * charCtrl.height / 2f,
+                Vector3.down,
+                charCtrl.height / 2f + charCtrl.skinWidth * 2f,
+                groundMask);
+
+            if (!isGrounded)
+            {
+                int _circlePrecision = 4;
+                float _angleOffset = 360f / _circlePrecision;
+                float _currentAngle = 0f;
+
+                // Raycast close to circle edges
+                for (int i = 0; i < _circlePrecision; ++i)
+                {
+                    Vector3 _rayPosition = transform.position + Vector3.up * charCtrl.height / 2f;
+                    _rayPosition.x += Mathf.Cos(Mathf.Deg2Rad * _currentAngle) * charCtrl.radius * 0.8f;
+                    _rayPosition.z += Mathf.Sin(Mathf.Deg2Rad * _currentAngle) * charCtrl.radius * 0.8f;
+
+                    isGrounded = Physics.Raycast(
+                        _rayPosition,
+                        Vector3.down,
+                        charCtrl.height / 2f + charCtrl.skinWidth * 2,
+                        groundMask);
+
+                    if (isGrounded) { break; }
+                    _currentAngle += _angleOffset;
+                }
+            }
+        }
+
         if (isGrounded) { numberJumps = 0; }  // Set number of jumps back to 0 because we hit the ground
+
+        // Determine if we are on a ramp object.
+        bool _onRamp = Physics.Raycast(
+            transform.position + Vector3.up * charCtrl.height / 2f,
+            Vector3.down,
+            charCtrl.height / 2f + charCtrl.skinWidth * 10f,
+            1 << rampLayerIndex);
+
+        // The following if will make sure we don't transit between airborne and stand locomotion animations when going down a ramp.
+        if (_onRamp)
+        {
+            animationController.SetIsGrounded(true);
+        }
+        else
+        {
+            animationController.SetIsGrounded(isGrounded);
+        }
     }
 
     /// <summary> Applies gravity to player </summary>

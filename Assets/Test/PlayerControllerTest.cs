@@ -2,26 +2,40 @@ using UnityEngine;
 
 public class PlayerControllerTest : MonoBehaviour
 {
-    [SerializeField]
-    private float moveSpeed;
 
     private AnimationStateControllerTest animationController;
     private CharacterController charCtrl;
-    private float gravity;
 
+    #region Gravity/Momentum related variables/constants
+
+    private float gravity;
     [SerializeField]
     private float gravityConstant;
+    private Vector3 inAirVelocity;
+    public bool isGrounded;
 
+    #endregion
+
+    #region Jump variables/constants
+
+    private Vector3 jmp;
     [SerializeField]
     private float jumpHeight;
-
-    public bool isGrounded;
-    private Vector3 jmp;
     private int numberJumps;
     private int maxJumps;
+
+    #endregion
+
+    #region Layer indexes variables/constants
+
     private int walkableLayerIndex;
     private int rampLayerIndex;
-    private Vector3 inAirVelocity;
+    private int playerLayerIndex;
+    private int groundMask;
+
+    #endregion
+
+    #region Camera variables/constants
 
     private Vector3 cameraOffset;
 
@@ -31,6 +45,7 @@ public class PlayerControllerTest : MonoBehaviour
     [SerializeField]
     private float lookSensitivityV;
 
+    private Transform rawCameraTransform;
     [SerializeField]
     private float cameraRotationXLimitDown;
     [SerializeField]
@@ -40,10 +55,23 @@ public class PlayerControllerTest : MonoBehaviour
     private float rotationMultiplier;
     private float xRot;
     private Vector3 rotation;
+    private float cameraToPlayerDistance;
+
+    #endregion
+
+    #region Game mechanic variables/constants
 
     private bool gamePaused;
 
+    #endregion
+
+    #region Movement variables/constants
+
+    [SerializeField]
+    private float moveSpeed;
     private const float runMoveSpeed = 6f;
+
+    #endregion
 
     [SerializeField]
     private Transform weaponLocation;
@@ -53,6 +81,9 @@ public class PlayerControllerTest : MonoBehaviour
     private void Awake()
     {
         animationController = GetComponent<AnimationStateControllerTest>();
+
+        #region Initialize Character Controller
+
         charCtrl = GetComponent<CharacterController>();
         charCtrl.stepOffset = 0.1f;
         charCtrl.skinWidth = 0.03f;
@@ -61,15 +92,27 @@ public class PlayerControllerTest : MonoBehaviour
         charCtrl.height = 1.68f;
         charCtrl.center = new Vector3(0.0f, charCtrl.height / 2.0f, 0.0f);
 
-        moveSpeed = runMoveSpeed;
+        #endregion
+
+        #region Initialize gravity/momentum related variables/constants
+
         gravity = 0f;
         gravityConstant = 1f;
-        jumpHeight = 12f;
         isGrounded = false;
+        inAirVelocity = Vector3.zero;
+
+        #endregion
+
+        #region Initialize jump variables/constants
 
         jmp = Vector3.zero;
+        jumpHeight = 12f;
         numberJumps = 0;
         maxJumps = 2;
+
+        #endregion
+
+        #region Initialize layer indexes variables/constants
 
         walkableLayerIndex = LayerMask.NameToLayer("Walkable");
         if (walkableLayerIndex == -1) // Check if ground layer is valid
@@ -77,17 +120,29 @@ public class PlayerControllerTest : MonoBehaviour
             Debug.LogError("Walkable layer does not exist");
         }
         rampLayerIndex = LayerMask.NameToLayer("Ramp");
-        if (rampLayerIndex == -1) // Check if ground layer is valid
+        if (rampLayerIndex == -1) // Check if ramp layer is valid
         {
             Debug.LogError("Ramp layer does not exist");
         }
+        playerLayerIndex = LayerMask.NameToLayer("Player");
+        if (playerLayerIndex == -1) // Check if player layer is valid
+        {
+            Debug.LogError("Player layer does not exist");
+        }
+        groundMask = 1 << walkableLayerIndex | 1 << rampLayerIndex;
 
-        inAirVelocity = Vector3.zero;
+        #endregion
+
+        #region Initialize camera variables/constants
 
         cameraOffset = new Vector3(0.5f, 1.4f, -2f);
         Camera.main.transform.SetParent(transform);
         Camera.main.transform.localPosition = cameraOffset;
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
+        rawCameraTransform = transform.Find("RawCameraTransform");
+        rawCameraTransform.localPosition = cameraOffset;
+        rawCameraTransform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
+
         lookSensitivityH = 10f;
         lookSensitivityV = 4f;
         cameraRotationXLimitDown = 75f;
@@ -96,6 +151,11 @@ public class PlayerControllerTest : MonoBehaviour
         rotationMultiplier = 100f;
         xRot = 0f;
         rotation = Vector3.zero;
+        cameraToPlayerDistance = Vector3.Distance(transform.position + Vector3.up * cameraOffset.y, rawCameraTransform.position);
+
+        #endregion
+
+        moveSpeed = runMoveSpeed;
         gamePaused = true;
     }
 
@@ -185,12 +245,14 @@ public class PlayerControllerTest : MonoBehaviour
         ApplyGravity();
         PerformJump();
         //CheckCollisionFlags();
+
+        FixCameraPosition();
+
         UpdateGrounded();
     }
 
     private void UpdateGrounded()
     {
-        int groundMask = 1 << walkableLayerIndex | 1 << rampLayerIndex;
         /* First if is going to sometimes detect that we are touching the ground, but not always. Hence the
         need for the else statement. */
         if ((charCtrl.collisionFlags & CollisionFlags.Below) != 0)
@@ -323,7 +385,7 @@ public class PlayerControllerTest : MonoBehaviour
         if (gamePaused) { return; }
         if (rotation != Vector3.zero)
         {  // Turn around player (horizontal axis)
-            transform.rotation = (transform.rotation * Quaternion.Euler(rotation * Time.deltaTime * rotationMultiplier));
+            transform.rotation = transform.rotation * Quaternion.Euler(rotation * Time.deltaTime * rotationMultiplier);
         }
 
         if (xRot != 0)
@@ -336,7 +398,7 @@ public class PlayerControllerTest : MonoBehaviour
             if (prevCameraRotationX != currentCameraRotationX)  // Camera rotation changed
             {
                 // Set animation vertical aim
-                float _verticalAim = 0f;
+                float _verticalAim;
                 if (currentCameraRotationX < 0)
                 {
                     _verticalAim = -currentCameraRotationX / cameraRotationXLimitUp;
@@ -350,7 +412,10 @@ public class PlayerControllerTest : MonoBehaviour
                 // Apply first person rotation to camera
                 //Camera.main.transform.localEulerAngles = new Vector3(currentCameraRotationX, 0f, 0f);
                 // Apply third person rotation to camera
-                Camera.main.transform.RotateAround(transform.position + Vector3.up * charCtrl.height / 2f,
+                Camera.main.transform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
+                    transform.right,
+                    currentCameraRotationX - prevCameraRotationX);
+                rawCameraTransform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
                     transform.right,
                     currentCameraRotationX - prevCameraRotationX);
             }
@@ -386,5 +451,47 @@ public class PlayerControllerTest : MonoBehaviour
             jmp = Vector3.zero;  // Used to know that we "consumed" the jump so we don't keep jumping after we hit the ground
             animationController.SetMustJump(true);
         }
+    }
+
+    private void FixCameraPosition()
+    {
+        // TODO: Clean/ optimize this.
+        // TODO: Add event handler to walking animations such that when the leg hit the floor we play audio of a step.
+        Vector3 _origin = transform.position + Vector3.up * cameraOffset.y;
+        Vector3 _dir = Vector3.Normalize(rawCameraTransform.position - _origin);
+        
+        bool _hitObj = Physics.SphereCast(
+            _origin,
+            0.1f,  /* Sphere radius */
+            _dir,
+            out RaycastHit hitInfo,
+            cameraToPlayerDistance,
+            ~(1 << playerLayerIndex) /* Everything but player */);
+
+        if (_hitObj)
+        {
+            //Debug.Log(hitInfo.point);
+            float _clipOffset = 0.2f;
+            //Debug.Log(hitInfo.transform.gameObject.name);
+            Camera.main.transform.position = Vector3.Lerp(
+                Camera.main.transform.position,
+                hitInfo.point + hitInfo.normal * _clipOffset,
+                Time.deltaTime * 5);
+            //Debug.Log(hitInfo.normal);
+        }
+        //else
+        else if (Camera.main.transform.position != rawCameraTransform.position)
+        {
+            Camera.main.transform.position = Vector3.Lerp(
+                Camera.main.transform.position,
+                rawCameraTransform.position,
+                Time.deltaTime * 5);
+        }
+
+        // Debug ray
+        //Debug.DrawRay(_origin,
+        //    _dir * _dist,
+        //    Color.red,
+        //    0.02f);
     }
 }

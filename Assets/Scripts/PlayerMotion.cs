@@ -1,7 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-[RequireComponent(typeof(PlayerMotor))]
-public class PlayerController : MonoBehaviour
+public class PlayerMotion : MonoBehaviour
 {
     [SerializeField]
     private float jumpHeight;
@@ -10,10 +9,11 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        jumpHeight = 18f;
+        jumpHeight = 12f;
         motor = GetComponent<PlayerMotor>();
     }
 
+    /// <summary> Handles player movement input, calculates velocity and sends to motor to be applied </summary>
     public void MovePlayer(float _moveSpeed, int _maxJumps, float _lookSensitivityH)
     {
         // Handle move input
@@ -36,6 +36,7 @@ public class PlayerController : MonoBehaviour
         if (Input.GetButtonDown("Jump")) { motor.Jump(_maxJumps, Vector3.up * jumpHeight); }
     }
 
+    /// <summary> Handles player mouse input on vertical axis and send it to motor to be applied </summary>
     public void MoveCamera(float _lookSensitivityV)
     {
         float _xRot = Input.GetAxisRaw("Mouse Y") * _lookSensitivityV;

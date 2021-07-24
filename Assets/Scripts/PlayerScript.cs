@@ -5,13 +5,13 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-[RequireComponent(typeof(PlayerController))]
+[RequireComponent(typeof(PlayerMotion))]
 [RequireComponent(typeof(PlayerShoot))]
 public class PlayerScript : NetworkBehaviour
 {
     private CanvasInGameHUD canvasInGameHUD;
 
-    private PlayerController playerController;
+    private PlayerMotion playerMotion;
 
     private PlayerShoot playerShoot;
 
@@ -61,16 +61,16 @@ public class PlayerScript : NetworkBehaviour
 
     private void Awake()
     {
-        cameraOffset = new Vector3(0.0f, 0.4f, 0.0f);
-
         // Find canvasInGameHUD script
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
 
-        // Find PlayerController script
-        playerController = GetComponent<PlayerController>();
+        // Find playerMotion script
+        playerMotion = GetComponent<PlayerMotion>();
 
         // Find PlayerShoot script
         playerShoot = GetComponent<PlayerShoot>();
+
+        cameraOffset = new Vector3(0.5f, 1.4f, -2f);
 
         baseMoveSpeed = 6f;
         moveSpeed = baseMoveSpeed;
@@ -80,17 +80,27 @@ public class PlayerScript : NetworkBehaviour
         maxJumps = 1;
         kills = 0;
         deaths = 0;
+
     }
 
     public override void OnStartLocalPlayer()
     {
-        // Lock player on camera. Once taken from scene it will destroy with player prefab.
+        if (isLocalPlayer)
+        {
+            nameTag.SetActive(false);
+        }
+
+        // Lock player on camera. Once taken from scene it will destroy with player prefab
         Camera.main.transform.SetParent(transform);
         Camera.main.transform.localPosition = cameraOffset;
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
 
-        // Have weapons be affected by camera rotation (up and down)
-        //weaponHolder.transform.SetParent(Camera.main.transform);
+        // Set raw camera object
+        GameObject _rawCameraObject = GameObject.Find("RawCameraTransform");
+        _rawCameraObject.transform.SetParent(transform);
+        _rawCameraObject.transform.localPosition = cameraOffset;
+        _rawCameraObject.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
+
 
         // Lock cursor on window blocked in the center.
         Cursor.lockState = CursorLockMode.Locked;
@@ -149,10 +159,10 @@ public class PlayerScript : NetworkBehaviour
         playerShoot.HandleShootWeaponInput();
 
         // Handle player movement and horizontal rotation
-        playerController.MovePlayer(moveSpeed, maxJumps, lookSensitivityH);
+        playerMotion.MovePlayer(moveSpeed, maxJumps, lookSensitivityH);
 
         // Handle camera movement (will rotate on vertical axis)
-        playerController.MoveCamera(lookSensitivityV);
+        playerMotion.MoveCamera(lookSensitivityV);
 
         // Test scoreboard sorting by having a way of increasing kills/deaths for a player
         if (Input.GetKeyDown(KeyCode.K))
