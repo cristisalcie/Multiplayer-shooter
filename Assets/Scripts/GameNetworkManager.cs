@@ -49,6 +49,8 @@ public class GameNetworkManager : NetworkManager
         base.OnServerDisconnect(conn);
     }
 
+    #region Scoreboard operation functions
+
     public void InsertIntoScoreboard(string _playerName)
     {
         for (int i = 0; i < scoreboardPlayerList.Count; ++i)
@@ -105,4 +107,6 @@ public class GameNetworkManager : NetworkManager
             }
         }
     }
+
+    #endregion
 }

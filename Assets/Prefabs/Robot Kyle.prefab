@@ -1244,7 +1244,6 @@ GameObject:
   - component: {fileID: 6960614364688157722}
   - component: {fileID: 7445827808399349913}
   - component: {fileID: -5635195107085605905}
-  - component: {fileID: 1646850917733214158}
   - component: {fileID: 6343585647434200624}
   - component: {fileID: 3631758298069026215}
   - component: {fileID: 8590226649448686218}
@@ -1329,22 +1328,6 @@ MonoBehaviour:
   visible: 0
   m_AssetId: 
   hasSpawned: 0
---- !u!114 &1646850917733214158
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4577274501743249392}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f6f3bf89aa97405989c802ba270f815, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncMode: 0
-  syncInterval: 0.1
-  clientAuthority: 1
-  animator: {fileID: 7445827808399349913}
 --- !u!114 &6343585647434200624
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1382,12 +1365,6 @@ MonoBehaviour:
   syncInterval: 0.1
   acceleration: 0
   deceleration: 0
-  velocityX: 0
-  velocityZ: 0
-  mustJump: 0
-  isShooting: 0
-  isGrounded: 0
-  verticalAim: 0
 --- !u!114 &8590226649448686218
 MonoBehaviour:
   m_ObjectHideFlags: 0

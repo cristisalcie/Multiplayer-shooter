@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerMotor))]
 public class PlayerMotion : MonoBehaviour
 {
     [SerializeField]

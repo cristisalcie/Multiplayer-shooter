@@ -85,6 +85,8 @@ public class PlayerScript : NetworkBehaviour
 
     public override void OnStartLocalPlayer()
     {
+        base.OnStartLocalPlayer();
+
         if (isLocalPlayer)
         {
             nameTag.SetActive(false);
@@ -175,6 +177,8 @@ public class PlayerScript : NetworkBehaviour
         }
     }
 
+    #region Hook functions
+
     private void OnNameChanged(string _Old, string _New)
     {
         playerNameText.text = playerName;
@@ -184,6 +188,10 @@ public class PlayerScript : NetworkBehaviour
     {
         playerNameTextBackground.color = _New;
     }
+
+    #endregion
+
+    #region Commands
 
     [Command]
     public void CmdSendPlayerMessage(string _message)
@@ -221,6 +229,10 @@ public class PlayerScript : NetworkBehaviour
         RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
 
+    #endregion
+
+    #region ClientRpc
+
     [ClientRpc]
     public void RpcReceive(string _message, bool _isPlayerMsg)
     {
@@ -232,4 +244,6 @@ public class PlayerScript : NetworkBehaviour
     {
         canvasInGameHUD.UpdateScoreboardUI(_scoreboardPlayerList);
     }
+
+    #endregion
 }

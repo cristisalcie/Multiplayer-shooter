@@ -1,6 +1,7 @@
 ﻿using Mirror;
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerMotor : NetworkBehaviour
 {
     private AnimationStateController animationController;
@@ -234,7 +235,6 @@ public class PlayerMotor : NetworkBehaviour
             charCtrl.Move(jmp * Time.deltaTime);
             ++numberJumps;
             jmp = Vector3.zero;  // Used to know that we "consumed" the jump so we don't keep jumping after we hit the ground
-            animationController.SetMustJump(true);
         }
     }
     
