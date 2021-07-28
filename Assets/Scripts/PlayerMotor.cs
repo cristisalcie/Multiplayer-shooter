@@ -293,18 +293,18 @@ public class PlayerMotor : NetworkBehaviour
             _origin,
             0.1f,  /* Sphere radius */
             _dir,
-            out RaycastHit hitInfo,
+            out RaycastHit _hitInfo,
             cameraToPlayerDistance,
             ~(1 << playerLayerIndex) /* Everything but player */);
 
         if (_hitObj)
         {
-            //Debug.Log(hitInfo.point);
+            //Debug.Log(_hitInfo.point);
             float _clipOffset = 0.2f;
-            //Debug.Log(hitInfo.transform.gameObject.name);
+            //Debug.Log(_hitInfo.transform.gameObject.name);
             Camera.main.transform.position = Vector3.Lerp(
                 Camera.main.transform.position,
-                hitInfo.point + hitInfo.normal * _clipOffset,
+                _hitInfo.point + _hitInfo.normal * _clipOffset,
                 Time.deltaTime * 5);
             //Debug.Log(hitInfo.normal);
         }

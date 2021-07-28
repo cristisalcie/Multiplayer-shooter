@@ -29,14 +29,20 @@ public class CanvasInGameHUD : MonoBehaviour
 
 	public GameObject chatMessage;
 
+    #region Text variables/constants
+
     [SerializeField]
 	private Text serverText;
-
     [SerializeField]
 	private Text clientText;
-
     [SerializeField]
     private Text ammoText;
+    [SerializeField]
+    private Text healthPointsText;
+
+    #endregion
+
+    #region Scoreboard variables/constants/classes
 
     private GameObject[] scoreboardPlayerListUI;
 
@@ -54,12 +60,15 @@ public class CanvasInGameHUD : MonoBehaviour
         }
     }
 
+    #endregion
 
     private void Awake()
     {
         paused = false;
         blockPlayerInput = false;
-        
+
+        #region Initialize scoreboard list
+
         scoreboardPlayerListUI = new GameObject[GameNetworkManager.singleton.maxConnections];
 
         GameObject _playerList = transform.Find("PanelScoreboard/PlayerList").gameObject;
@@ -72,15 +81,15 @@ public class CanvasInGameHUD : MonoBehaviour
                 t.text = string.Empty;
             }
         }
-
         scoreboardListComparer = new ScoreboardListComparer();
+
+        #endregion
     }
 
     private void Start()
     {
         // Make sure to attach these Buttons in the Inspector
         buttonStop.onClick.AddListener(ButtonStop);
-
         SetupCanvas();
     }
 
@@ -208,6 +217,11 @@ public class CanvasInGameHUD : MonoBehaviour
     public void UpdateAmmoUI(int _value)
     {
         ammoText.text = "Ammo: " + _value;
+    }
+
+    public void UpdateHealthUI(int _value)
+    {
+        healthPointsText.text = _value.ToString();
     }
 
     public void UpdateScoreboardUI(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)

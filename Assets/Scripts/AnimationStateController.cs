@@ -48,7 +48,6 @@ public class AnimationStateController : NetworkBehaviour
             // The following functions manage the animator as well
             MoveForwardBackward();
             MoveLeftRight();
-            ShootWeapon();
         }
         else
         {
@@ -92,6 +91,23 @@ public class AnimationStateController : NetworkBehaviour
         would have been the default false value even if it is supposed to be true.
         Maybe it could be optimized in the future. */
         CmdSyncIsGrounded(isGrounded);
+    }
+
+    public void ShootWeapon(bool _isShooting)
+    {
+        if (_isShooting != isShooting)  // Value changed
+        {
+            // Make change
+            isShooting = _isShooting;
+            // Set in animator
+            animator.SetBool(isShootingHash, isShooting);
+        }
+
+        /* Not syncing to all clients in the above if case because of the following scenario:
+        If a player that is not moving is already online when another one first joins isShooting
+        would have been the default false value even if it is supposed to be true.
+        Maybe it could be optimized in the future. */
+        CmdSyncShoot(isShooting);
     }
 
     #endregion
@@ -172,30 +188,6 @@ public class AnimationStateController : NetworkBehaviour
             CmdSyncVelocityX(velocityX);
         }
         // Else do nothing and save bandwidth
-    }
-
-    private void ShootWeapon()
-    {
-        bool _isShooting = Input.GetKey(KeyCode.Mouse0);
-
-        if (_isShooting != isShooting)  // Value changed
-        {
-            // Make change
-            isShooting = _isShooting;
-            // Set in animator
-            animator.SetBool(isShootingHash, isShooting);
-        }
-
-        /* Not syncing to all clients in the above if case because of the following scenario:
-        If a player that is not moving is already online when another one first joins isShooting
-        would have been the default false value even if it is supposed to be true.
-        Maybe it could be optimized in the future. */
-        CmdSyncShoot(isShooting);
-    }
-
-    private void TestShootingEvent()
-    {
-        Debug.Log("called TestShootingEvent in AnimationStateController");
     }
 
     #region Commands

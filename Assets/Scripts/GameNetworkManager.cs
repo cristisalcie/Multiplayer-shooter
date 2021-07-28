@@ -33,7 +33,7 @@ public class GameNetworkManager : NetworkManager
             foreach (KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections)
             {
                 _playerScript = connection.Value.identity.gameObject.GetComponent<PlayerScript>();
-                Debug.Log($"Found a player script that has the name {_playerScript.playerName}");
+                //Debug.Log($"Found a player script that has the name {_playerScript.playerName}");
                 break;
             }
             if (_playerScript != null)
@@ -45,7 +45,7 @@ public class GameNetworkManager : NetworkManager
             }
         }
 
-        Debug.Log($"{_dcPlayerScript.playerName} disconnected and numplayers is {numPlayers}");
+        //Debug.Log($"{_dcPlayerScript.playerName} disconnected and numplayers is {numPlayers}");
         base.OnServerDisconnect(conn);
     }
 

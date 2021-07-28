@@ -4,11 +4,21 @@ using UnityEngine;
 
 public class Weapon : MonoBehaviour
 {
-    public float weaponSpeed = 15.0f;
-    public float weaponLife = 3.0f;
-    public float weaponCooldown = 0.1f;
-    public int weaponAmmo = 15;
+    public float weaponBulletSpeed;
+    public float weaponBulletLife;
+    public int weaponAmmo;
+    public float weaponCooldown;
+    public int weaponRange;
 
     public GameObject weaponBullet;
-    public Transform weaponFirePosition;
+    public Transform weaponFireTransform;
+
+    private void Awake()
+    {
+        weaponBulletSpeed = 30.0f;
+        weaponAmmo = 15000;
+        weaponBulletLife = 3.0f;
+        weaponCooldown = 0.05f;
+        weaponRange = 200;
+    }
 }

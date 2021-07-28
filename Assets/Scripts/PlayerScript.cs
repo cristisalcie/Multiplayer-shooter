@@ -7,55 +7,55 @@ using UnityEngine.UI;
 
 [RequireComponent(typeof(PlayerMotion))]
 [RequireComponent(typeof(PlayerShoot))]
+[RequireComponent(typeof(PlayerState))]
 public class PlayerScript : NetworkBehaviour
 {
-    private CanvasInGameHUD canvasInGameHUD;
+    #region Motion related variables/constants
 
     private PlayerMotion playerMotion;
-
-    private PlayerShoot playerShoot;
-
-    private Vector3 cameraOffset;
-
-
-    [SerializeField]
-    private Text playerNameText;
-
-    [SerializeField]
-    private RawImage playerNameTextBackground;
-
-    [SerializeField]
-    private GameObject nameTag;
-
-    [SyncVar(hook = nameof(OnNameChanged))]
-    public string playerName;
-
-    [SerializeField]
-    [SyncVar(hook = nameof(OnColorChanged))]
-    private Color playerColor = Color.white;
-
-    public static event Action<PlayerScript, string, bool> OnMessage;
-
     [SerializeField]
     private float baseMoveSpeed;
-
     [SerializeField]
     private float moveSpeed;
-
-    [SerializeField]
-    private float lookSensitivityH;
-
-    [SerializeField]
-    private float lookSensitivityV;
-
     [SerializeField]
     private int maxJumps;
 
+    #endregion
+
+    #region Camera related variables/constants
+
+    private Vector3 cameraOffset;
+    [SerializeField]
+    private float lookSensitivityH;
+    [SerializeField]
+    private float lookSensitivityV;
+
+    #endregion
+
+    #region Chat and player UI variables/constants
+
+    private CanvasInGameHUD canvasInGameHUD;
+    [SerializeField]
+    private Text playerNameText;
+    [SerializeField]
+    private RawImage playerNameTextBackground;
+    [SerializeField]
+    private GameObject nameTag;
+    [SyncVar(hook = nameof(OnNameChanged))]
+    public string playerName;
+    [SerializeField]
+    [SyncVar(hook = nameof(OnColorChanged))]
+    private Color playerColor = Color.white;
+    public static event Action<PlayerScript, string, bool> OnMessage;
+
+    #endregion
+
+    private PlayerState playerState;
+    private PlayerShoot playerShoot;
     private int selectedWeaponLocal;
 
     [SyncVar]
     private int kills;
-
     [SyncVar]
     private int deaths;
 
@@ -64,23 +64,33 @@ public class PlayerScript : NetworkBehaviour
         // Find canvasInGameHUD script
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
 
+        #region Initialize motion variables/constants
+
         // Find playerMotion script
         playerMotion = GetComponent<PlayerMotion>();
+        baseMoveSpeed = 6f;
+        moveSpeed = baseMoveSpeed;
+        maxJumps = 1;
+
+        #endregion
 
         // Find PlayerShoot script
         playerShoot = GetComponent<PlayerShoot>();
+        selectedWeaponLocal = 1;
+
+        // Find PlayerState script
+        playerState = GetComponent<PlayerState>();
+
+        #region Initialize camera variables/constants
 
         cameraOffset = new Vector3(0.5f, 1.4f, -2f);
-
-        baseMoveSpeed = 6f;
-        moveSpeed = baseMoveSpeed;
         lookSensitivityH = 5f;
         lookSensitivityV = 5f;
-        selectedWeaponLocal = 1;
-        maxJumps = 1;
+
+        #endregion
+
         kills = 0;
         deaths = 0;
-
     }
 
     public override void OnStartLocalPlayer()
@@ -91,6 +101,8 @@ public class PlayerScript : NetworkBehaviour
         {
             nameTag.SetActive(false);
         }
+
+        #region Initialize camera variables/constants
 
         // Lock player on camera. Once taken from scene it will destroy with player prefab
         Camera.main.transform.SetParent(transform);
@@ -103,6 +115,7 @@ public class PlayerScript : NetworkBehaviour
         _rawCameraObject.transform.localPosition = cameraOffset;
         _rawCameraObject.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
 
+        #endregion
 
         // Lock cursor on window blocked in the center.
         Cursor.lockState = CursorLockMode.Locked;
@@ -204,9 +217,26 @@ public class PlayerScript : NetworkBehaviour
     public void CmdSetupPlayer(string _name, Color _col)
     {
         // Player info sent to server, then server updates sync vars which handles it on all clients
+        playerState.SetupState();
+
         playerName = _name;
         playerColor = _col;
         RpcReceive($"{playerName} joined".Trim(), false);
+
+        // Request player state data to be sent to the player that just joined
+        foreach (KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections)
+        {
+            if (netIdentity.connectionToClient == connection.Value)  // Skip current script's attached GameObject
+            {
+                continue;
+            }
+            PlayerState _playerState = connection.Value.identity.gameObject.GetComponent<PlayerState>();
+
+            // Goes back to owner of playerState script (the player who just joined) and sets state.
+            // First parameter is sent to know what gameObject to modify and second parameter is the value
+            // that needs to be set of the above gameObject because the player who just joined doesn't know it.
+            playerState.TargetSetHealthPoints(_playerState.gameObject, _playerState.GetHealthPoints());
+        }
 
         // Insert and update scoreboard
         ((GameNetworkManager)GameNetworkManager.singleton).InsertIntoScoreboard(playerName);
