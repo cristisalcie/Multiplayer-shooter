@@ -13,12 +13,14 @@ public class AnimationStateController : NetworkBehaviour
     private float verticalAim;
     private bool isShooting;
     private bool isGrounded;
+    private bool isDead;
 
     private int velocityXHash;
     private int velocityZHash;
     private int verticalAimHash;
     private int isGroundedHash;
     private int isShootingHash;
+    private int isDeadHash;
 
     private void Awake()
     {
@@ -30,6 +32,7 @@ public class AnimationStateController : NetworkBehaviour
         verticalAim = 0.0f;
         isShooting = false;
         isGrounded = false;
+        isDead = false;
     }
 
     private void Start()
@@ -39,6 +42,7 @@ public class AnimationStateController : NetworkBehaviour
         verticalAimHash = Animator.StringToHash("verticalAim");
         isGroundedHash = Animator.StringToHash("isGrounded");
         isShootingHash = Animator.StringToHash("isShooting");
+        isDeadHash = Animator.StringToHash("isDead");
     }
 
     private void Update()
@@ -54,9 +58,10 @@ public class AnimationStateController : NetworkBehaviour
             // No authority over variables, however we should animate the character that has this script attached.
             animator.SetFloat(velocityXHash, velocityX);
             animator.SetFloat(velocityZHash, velocityZ);
+            animator.SetFloat(verticalAimHash, verticalAim);
             animator.SetBool(isShootingHash, isShooting);
             animator.SetBool(isGroundedHash, isGrounded);
-            animator.SetFloat(verticalAimHash, verticalAim);
+            animator.SetBool(isDeadHash, isDead);
         }
     }
 
@@ -91,6 +96,19 @@ public class AnimationStateController : NetworkBehaviour
         would have been the default false value even if it is supposed to be true.
         Maybe it could be optimized in the future. */
         CmdSyncIsGrounded(isGrounded);
+    }
+
+    /// <summary> Already running in a ClientRpc in PlayerState, hence synchronization already done </summary>
+    /// <param name="_isDead"> New value </param>
+    public void SetIsDead(bool _isDead)
+    {
+        if (_isDead != isDead)  // Value changed
+        {
+            // Make change
+            isDead = _isDead;
+            // Set in animator
+            animator.SetBool(isDeadHash, isDead);
+        }
     }
 
     public void ShootWeapon(bool _isShooting)

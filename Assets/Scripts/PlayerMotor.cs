@@ -26,6 +26,7 @@ public class PlayerMotor : NetworkBehaviour
     private float lookUpLimit;
     [SerializeField]
     private float lookDownLimit;
+    private bool mustResetCamera;
 
     #endregion
 
@@ -88,6 +89,7 @@ public class PlayerMotor : NetworkBehaviour
         rotationMultiplier = 100f;
         lookUpLimit = 75f;
         lookDownLimit = -75f;
+        mustResetCamera = false;
         
         #endregion
 
@@ -149,7 +151,8 @@ public class PlayerMotor : NetworkBehaviour
     {
         // Let us be local player X. There is no point in running this script section on player Y's attached script from player X client
         // In other words if we don't have authority to move this player return
-        if (!hasAuthority) { return; }
+        if (!hasAuthority || !isLocalPlayer) { return; }
+        if (!charCtrl.enabled) { return; }
         UpdateGrounded();
         PerformMovement();
         PerformRotation();
@@ -160,10 +163,11 @@ public class PlayerMotor : NetworkBehaviour
     {
         // Let us be local player X. There is no point in running this script section on player Y's attached script from player X client
         // In other words if we don't have authority to move this player return
-        if (!hasAuthority) { return; }
+        if (!hasAuthority || !isLocalPlayer) { return; }
+        if (!charCtrl.enabled) { return; }
         ApplyGravity();
         PerformJump();
-        FixCameraPosition();
+        FixCameraTransform();
     }
 
     /// <summary> This function is responsible for movement </summary>
@@ -250,7 +254,12 @@ public class PlayerMotor : NetworkBehaviour
     /// <summary> Actual code for performing player camera rotation on the vertical axis </summary>
     void PerformCameraRotation()
     {
-        if (cameraRotationX != 0 && isLocalPlayer)
+        if (Camera.main.transform.parent != transform) // It doesn't belong to our player (Is in spectate mode)
+        {
+            return;
+        }
+
+        if (cameraRotationX != 0)
         {
             // Set rotation and clamp it
             float prevCameraRotationX = currentCameraRotationX;
@@ -272,6 +281,7 @@ public class PlayerMotor : NetworkBehaviour
                 animationController.SetVerticalAim(_verticalAim);
 
                 // Apply third person rotation to camera
+                // Would it be cheaper if we just assign camera.main.transform.position/rotation instead of rotating twice ? Requires testing.
                 Camera.main.transform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
                     transform.right,
                     currentCameraRotationX - prevCameraRotationX);
@@ -283,9 +293,20 @@ public class PlayerMotor : NetworkBehaviour
     }
 
     /// <summary> In case of camera collision this function will take control of the camera position. </summary>
-    private void FixCameraPosition()
+    private void FixCameraTransform()
     {
-        // TODO: Add event handler to walking animations such that when the leg hit the floor we play audio of a step.
+        if (Camera.main.transform.parent != transform) // It doesn't belong to our player (Is in spectate mode)
+        {
+            mustResetCamera = true;
+            return;
+        }
+        if (mustResetCamera)
+        {
+            mustResetCamera = false;
+            Camera.main.transform.position = rawCameraTransform.position;
+            Camera.main.transform.rotation = rawCameraTransform.rotation;
+        }
+
         Vector3 _origin = transform.position + Vector3.up * cameraOffset.y;
         Vector3 _dir = Vector3.Normalize(rawCameraTransform.position - _origin);
 
@@ -299,14 +320,15 @@ public class PlayerMotor : NetworkBehaviour
 
         if (_hitObj)
         {
-            //Debug.Log(_hitInfo.point);
             float _clipOffset = 0.2f;
-            //Debug.Log(_hitInfo.transform.gameObject.name);
-            Camera.main.transform.position = Vector3.Lerp(
-                Camera.main.transform.position,
-                _hitInfo.point + _hitInfo.normal * _clipOffset,
-                Time.deltaTime * 5);
-            //Debug.Log(hitInfo.normal);
+            Vector3 _desiredPosition = _hitInfo.point + _hitInfo.normal * _clipOffset;
+            if (Camera.main.transform.position != _desiredPosition)
+            {
+                Camera.main.transform.position = Vector3.Lerp(
+                    Camera.main.transform.position,
+                    _desiredPosition,
+                    Time.deltaTime * 5);
+            }
         }
         else if (Camera.main.transform.position != rawCameraTransform.position)
         {

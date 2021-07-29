@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 8156122824365415676}
   - component: {fileID: -6090267601611509612}
   - component: {fileID: 7420082163148234623}
+  - component: {fileID: 6176896683892924261}
   - component: {fileID: 6829317719256338351}
   - component: {fileID: 6209347910691206593}
   - component: {fileID: 4300377911797062928}
@@ -199,16 +200,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
+  baseMoveSpeed: 0
+  moveSpeed: 0
+  maxJumps: 0
+  lookSensitivityH: 0
+  lookSensitivityV: 0
   playerNameText: {fileID: 168521159666553647}
   playerNameTextBackground: {fileID: 2583137981020531229}
   nameTag: {fileID: 2063446140706669415}
   playerName: 
   playerColor: {r: 1, g: 1, b: 1, a: 1}
-  baseMoveSpeed: 0
-  moveSpeed: 0
-  lookSensitivityH: 0
-  lookSensitivityV: 0
-  maxJumps: 0
 --- !u!114 &-6090267601611509612
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -229,7 +230,6 @@ MonoBehaviour:
   - {fileID: 8750954392831979156}
   - {fileID: 5901915721537863604}
   activeWeaponSynced: 0
-  weaponCooldownTime: 0
 --- !u!114 &7420082163148234623
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -247,6 +247,21 @@ MonoBehaviour:
   lookUpLimit: 0
   lookDownLimit: 0
   gravityConstant: 0
+--- !u!114 &6176896683892924261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 927745021924650373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5114f4cfbb85b2748a37251b8579dda9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  isDead: 0
 --- !u!114 &6829317719256338351
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -645,13 +660,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9d77a5204d1c6047b4dce0cea6026d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponSpeed: 15
-  weaponLife: 3
-  weaponCooldown: 0.1
+  weaponBulletSpeed: 0
+  weaponBulletLife: 0
   weaponAmmo: 15
+  weaponCooldown: 0.1
+  weaponRange: 0
   weaponBullet: {fileID: 7751917299836629062, guid: 549f7d2ca9d6410418676071a81c129f,
     type: 3}
-  weaponFirePosition: {fileID: 7032660662518657330}
+  weaponFireTransform: {fileID: 0}
 --- !u!1 &7413331887548404618
 GameObject:
   m_ObjectHideFlags: 0
@@ -849,10 +865,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9d77a5204d1c6047b4dce0cea6026d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponSpeed: 15
-  weaponLife: 3
-  weaponCooldown: 0.1
+  weaponBulletSpeed: 0
+  weaponBulletLife: 0
   weaponAmmo: 15
+  weaponCooldown: 0.1
+  weaponRange: 0
   weaponBullet: {fileID: 4637210344688469342, guid: b6ec56a89f93ce14c95883effa3576c8,
     type: 3}
-  weaponFirePosition: {fileID: 3238160932038355333}
+  weaponFireTransform: {fileID: 0}

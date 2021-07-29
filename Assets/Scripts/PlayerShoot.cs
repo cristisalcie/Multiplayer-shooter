@@ -219,7 +219,9 @@ public class PlayerShoot : NetworkBehaviour
                         Debug.Log("hit player wrist inside if");
                     }
 
-                    GameObject _parent = _hitInfo.transform.GetComponentInParent<PlayerScript>().gameObject;
+                    //GameObject _parent = _hitInfo.transform.GetComponentInParent<PlayerScript>().gameObject;
+                    // Or like this
+                    GameObject _parent = _hitInfo.transform.root.gameObject;
                     playerState.CmdHit(_parent, _damage);
                 }
             }

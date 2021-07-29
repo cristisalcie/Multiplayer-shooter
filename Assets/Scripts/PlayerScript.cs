@@ -104,7 +104,9 @@ public class PlayerScript : NetworkBehaviour
 
         #region Initialize camera variables/constants
 
-        // Lock player on camera. Once taken from scene it will destroy with player prefab
+        Debug.Log(Camera.main.transform.parent + ": is parent of main camera");
+
+        // Lock player on camera. Once taken from scene it will destroy with player prefab unless we set parent back to null (give camera to scene).
         Camera.main.transform.SetParent(transform);
         Camera.main.transform.localPosition = cameraOffset;
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
@@ -150,6 +152,8 @@ public class PlayerScript : NetworkBehaviour
         // If we blocked player input we return here.
         if (canvasInGameHUD.blockPlayerInput) { return; }
 
+        if (playerState.IsDead) { return; }
+
         // Handle weapon switching
         int currentSelectedWeapon = playerShoot.HandleSwitchWeaponInput();
 
@@ -158,7 +162,7 @@ public class PlayerScript : NetworkBehaviour
         {
             if (currentSelectedWeapon == 0)  // Meele
             {
-                moveSpeed *= 1.2f;
+                moveSpeed *= 1.4f;
                 maxJumps = 2;
             }
             else  // Anything else
@@ -176,17 +180,22 @@ public class PlayerScript : NetworkBehaviour
         // Handle player movement and horizontal rotation
         playerMotion.MovePlayer(moveSpeed, maxJumps, lookSensitivityH);
 
-        // Handle camera movement (will rotate on vertical axis)
-        playerMotion.MoveCamera(lookSensitivityV);
+        if (Camera.main.transform.parent == transform)  // Camera is watching us => Allowed to receive input
+        {
+            // Handle camera movement (will rotate on vertical axis)
+            playerMotion.MoveCamera(lookSensitivityV);
+        }
 
         // Test scoreboard sorting by having a way of increasing kills/deaths for a player
         if (Input.GetKeyDown(KeyCode.K))
         {
-            CmdIncreaseKillTestFunc();
+            Camera.main.transform.SetParent(null);
+            //CmdIncreaseKillTestFunc();
         }
         if (Input.GetKeyDown(KeyCode.L))
         {
-            CmdIncreaseDeathTestFunc();
+            Camera.main.transform.SetParent(transform);
+            //CmdIncreaseDeathTestFunc();
         }
     }
 
@@ -235,7 +244,7 @@ public class PlayerScript : NetworkBehaviour
             // Goes back to owner of playerState script (the player who just joined) and sets state.
             // First parameter is sent to know what gameObject to modify and second parameter is the value
             // that needs to be set of the above gameObject because the player who just joined doesn't know it.
-            playerState.TargetSetHealthPoints(_playerState.gameObject, _playerState.GetHealthPoints());
+            playerState.TargetSetHealthPoints(_playerState.gameObject, _playerState.HealthPoints);
         }
 
         // Insert and update scoreboard
