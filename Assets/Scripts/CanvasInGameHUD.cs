@@ -20,9 +20,15 @@ public class CanvasInGameHUD : MonoBehaviour
 	private Button buttonStop;
 	
     [SerializeField]
-	private GameObject PanelOptions;
+	private GameObject panelOptions;
 
-	public GameObject PanelScoreboard;
+	public GameObject panelScoreboard;
+
+    [SerializeField]
+	private GameObject panelRespawn;
+
+    [SerializeField]
+	private GameObject crosshair;
 
     [SerializeField]
 	private GameObject chatWindow;
@@ -39,6 +45,9 @@ public class CanvasInGameHUD : MonoBehaviour
     private Text ammoText;
     [SerializeField]
     private Text healthPointsText;
+
+    public Text killedByText;
+    public Text respawnSecondsText;
 
     #endregion
 
@@ -102,8 +111,9 @@ public class CanvasInGameHUD : MonoBehaviour
 
     private void SetupCanvas()
     {
-        PanelOptions.SetActive(false);
-        PanelScoreboard.SetActive(false);
+        panelOptions.SetActive(false);
+        panelScoreboard.SetActive(false);
+        panelRespawn.SetActive(false);
 
         if (NetworkServer.active) { serverText.text = "Server: active. Transport: " + Transport.activeTransport; }
         if (NetworkClient.isConnected) { clientText.text = "Client: address=" + GameNetworkManager.singleton.networkAddress; }
@@ -134,7 +144,8 @@ public class CanvasInGameHUD : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             paused = !paused;
-            PanelOptions.SetActive(paused);
+            panelOptions.SetActive(paused);
+            crosshair.SetActive(!paused && !panelRespawn.activeSelf);
             if (paused)
             {
                 if (blockPlayerInput)
@@ -206,11 +217,11 @@ public class CanvasInGameHUD : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Tab))  // "Tab" key is being pressed
         {
-            PanelScoreboard.SetActive(true);
+            panelScoreboard.SetActive(true);
         }
         else if (Input.GetKeyUp(KeyCode.Tab))  // "Tab" key is released
         {
-            PanelScoreboard.SetActive(false);
+            panelScoreboard.SetActive(false);
         }
     }
 
@@ -254,6 +265,31 @@ public class CanvasInGameHUD : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void DisplayRespawnPanel(string _killer)
+    {
+        crosshair.SetActive(false);
+        panelRespawn.SetActive(true);
+        if (_killer == null)
+        {
+            killedByText.text = "Suicided";
+        }
+        else
+        {
+            killedByText.text = $"Killed by {_killer}";
+        }
+    }
+
+    public void UpdateRespawnSeconds(int _seconds)
+    {
+        respawnSecondsText.text = _seconds.ToString();
+    }
+
+    public void HideRespawnPanel()
+    {
+        panelRespawn.SetActive(false);
+        crosshair.SetActive(true);
     }
 }
 

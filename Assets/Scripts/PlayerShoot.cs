@@ -17,7 +17,7 @@ public class PlayerShoot : NetworkBehaviour
     [SerializeField]
     private int activeWeaponSynced;
 
-    private Weapon activeWeapon;
+    public Weapon ActiveWeapon { get; private set; }
     private float weaponCooldownTime;
 
     private void Awake()
@@ -43,8 +43,8 @@ public class PlayerShoot : NetworkBehaviour
 
         if (selectedWeaponLocal < weaponArray.Length && weaponArray[selectedWeaponLocal] != null)
         {
-            activeWeapon = weaponArray[selectedWeaponLocal].GetComponent<Weapon>();
-            canvasInGameHUD.UpdateAmmoUI(activeWeapon.weaponAmmo);
+            ActiveWeapon = weaponArray[selectedWeaponLocal].GetComponent<Weapon>();
+            canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo);
         }
         weaponCooldownTime = 0;
     }
@@ -63,8 +63,8 @@ public class PlayerShoot : NetworkBehaviour
             weaponArray[_New].SetActive(true);
             if (_New != 0)  // Meele weapon not implemented
             {
-                activeWeapon = weaponArray[activeWeaponSynced].GetComponent<Weapon>();
-                if (isLocalPlayer) { canvasInGameHUD.UpdateAmmoUI(activeWeapon.weaponAmmo); }
+                ActiveWeapon = weaponArray[activeWeaponSynced].GetComponent<Weapon>();
+                if (isLocalPlayer) { canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo); }
             }
         }
     }
@@ -119,10 +119,10 @@ public class PlayerShoot : NetworkBehaviour
     /// <summary> Called in PlayerScript update function </summary>
     public void HandleShootWeaponInput()
     {
-        bool _isShooting = Input.GetButton("Fire1") && activeWeapon && activeWeapon.weaponAmmo > 0 && selectedWeaponLocal != 0 && Time.time > weaponCooldownTime;
+        bool _isShooting = Input.GetButton("Fire1") && ActiveWeapon && ActiveWeapon.weaponAmmo > 0 && selectedWeaponLocal != 0 && Time.time > weaponCooldownTime;
         if (_isShooting)
         {
-            weaponCooldownTime = Time.time + activeWeapon.weaponCooldown;
+            weaponCooldownTime = Time.time + ActiveWeapon.weaponCooldown;
         }
         animationController.ShootWeapon(_isShooting);
     }
@@ -132,15 +132,15 @@ public class PlayerShoot : NetworkBehaviour
     {
         if (selectedWeaponLocal != 0 && hasAuthority)  // Meele weapon not implemented
         {
-            activeWeapon.weaponAmmo -= 1;
-            canvasInGameHUD.UpdateAmmoUI(activeWeapon.weaponAmmo);
+            ActiveWeapon.weaponAmmo -= 1;
+            canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo);
 
             // Calculate raycast from camera to match with crosshair location, see what/who it hits and then sync to everyone
             bool _hasHit = Physics.Raycast(
                 Camera.main.transform.position,
                 Camera.main.transform.forward,
                 out RaycastHit _hitInfo,
-                activeWeapon.weaponRange);
+                ActiveWeapon.weaponRange);
 
             #region Debug code
 
@@ -151,7 +151,7 @@ public class PlayerShoot : NetworkBehaviour
             // For visual trail of where bullet is supposed to hit
             Debug.DrawRay(
                     Camera.main.transform.position,
-                    Camera.main.transform.forward * activeWeapon.weaponRange,
+                    Camera.main.transform.forward * ActiveWeapon.weaponRange,
                     Color.yellow,
                     30f
                 );
@@ -159,7 +159,7 @@ public class PlayerShoot : NetworkBehaviour
 
             // For visual trail of the bullet trajectory:
             Debug.DrawLine(
-                activeWeapon.weaponFireTransform.position,
+                ActiveWeapon.weaponFireTransform.position,
                 _hitInfo.point,
                 Color.red,
                 30f);
@@ -253,9 +253,9 @@ public class PlayerShoot : NetworkBehaviour
     {
         // todo: audio play, draw/instantiate visual effects of raycast
         //bulletAudio.Play(); muzzleflash  etc
-        var bullet = Instantiate(activeWeapon.weaponBullet, activeWeapon.weaponFireTransform.position, activeWeapon.weaponFireTransform.rotation);
-        bullet.GetComponent<Rigidbody>().velocity = bullet.transform.forward * activeWeapon.weaponBulletSpeed;
-        if (bullet) { Destroy(bullet, activeWeapon.weaponBulletLife); }
+        var bullet = Instantiate(ActiveWeapon.weaponBullet, ActiveWeapon.weaponFireTransform.position, ActiveWeapon.weaponFireTransform.rotation);
+        bullet.GetComponent<Rigidbody>().velocity = bullet.transform.forward * ActiveWeapon.weaponBulletSpeed;
+        if (bullet) { Destroy(bullet, ActiveWeapon.weaponBulletLife); }
     }
 
     #endregion

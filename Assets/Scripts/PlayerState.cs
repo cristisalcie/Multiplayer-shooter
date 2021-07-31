@@ -1,6 +1,5 @@
 using Mirror;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerState : NetworkBehaviour
@@ -8,11 +7,13 @@ public class PlayerState : NetworkBehaviour
     private AnimationStateController animationController;
     private CanvasInGameHUD canvasInGameHUD;
     
-    private const float respawnPlayerTime = 5.0f;
+    public const int respawnPlayerTime = 5;
     public int HealthPoints { get; private set; }  // Server authoritive!
     private int maxHealthPoints;
     public bool IsDead { get; private set; }  // This doesn't have to be sent through network. We can determine if is dead looking at healthPoints
     private Transform spawnPoints;
+    private string playerName;
+    private string killer;
 
     private void Awake()
     {
@@ -20,6 +21,7 @@ public class PlayerState : NetworkBehaviour
         animationController = GetComponent<AnimationStateController>();
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
         maxHealthPoints = 1000;  // Only accesed from Server at the moment
+        killer = null;
     }
 
     /// <summary> Runs on the server </summary>
@@ -30,13 +32,20 @@ public class PlayerState : NetworkBehaviour
         RpcSyncHealthPoints(HealthPoints);
     }
 
+    public void SetPlayerName(string _playerName)
+    {
+        playerName = _playerName;
+    }
+
     #region Coroutines
 
     /// <summary> Should run on all clients on script attached to the player that requires respawn </summary>
-    IEnumerator RespawnPlayer()
+    private IEnumerator RespawnPlayer()
     {
         if (isLocalPlayer)
         {
+            StartCoroutine(DisplayPlayerRespawnPanel());
+
             CharacterController charCtrl = GetComponent<CharacterController>();
             Camera.main.transform.SetParent(null);  // Give camera to scene
 
@@ -79,6 +88,17 @@ public class PlayerState : NetworkBehaviour
         }
     }
 
+    private IEnumerator DisplayPlayerRespawnPanel()
+    {
+        canvasInGameHUD.DisplayRespawnPanel(killer);
+        for (int i = 0; i < respawnPlayerTime; ++i)
+        {
+            canvasInGameHUD.UpdateRespawnSeconds(respawnPlayerTime - i);
+            yield return new WaitForSeconds(1f);
+        }
+        canvasInGameHUD.HideRespawnPanel();
+    }
+
     #endregion
 
     #region Commands
@@ -97,6 +117,8 @@ public class PlayerState : NetworkBehaviour
     public void CmdHit(GameObject _target, int _damage)
     {
         PlayerState _targetPlayerState = _target.GetComponent<PlayerState>();
+        PlayerScript _targetPlayerScript = _target.GetComponent<PlayerScript>();
+        string _targetName = _targetPlayerScript.playerName;
 
         // Have server know the values of the variables as well so it can provide them for new connections directly
         if (_targetPlayerState.IsDead) { return; }
@@ -106,6 +128,16 @@ public class PlayerState : NetworkBehaviour
         {
             _targetPlayerState.HealthPoints = 0;
             _targetPlayerState.IsDead = true;
+
+            ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardDeathsOf(_targetName);
+            ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardKillsOf(playerName);
+            /* Doesn't matter which script gets this because there is only one canvas on each client that can be updated by anyone.
+             * In this case it will be the one who died. Example. X got killed => X's playerState script updates the canvas
+             * on all connected clients. */
+            _targetPlayerScript.RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+
+            // Let the killed player know who killed him.
+            _targetPlayerState.TargetSetKiller(playerName);
         }
 
         // Called from target's script so we can also update the canvas health points text by just checking if localPlayer
@@ -162,6 +194,12 @@ public class PlayerState : NetworkBehaviour
             _targetPlayerState.IsDead = true;
             _target.GetComponent<AnimationStateController>().SetIsDead(true);  // Set player state to dead
         }  // Else is false (default)
+    }
+
+    [TargetRpc]
+    private void TargetSetKiller(string _killer)
+    {
+        killer = _killer;
     }
 
     #endregion

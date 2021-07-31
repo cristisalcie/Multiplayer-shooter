@@ -49,6 +49,7 @@ public class GameNetworkManager : NetworkManager
         base.OnServerDisconnect(conn);
     }
 
+    // Awaiting optimization in the future to dictionary or different way of holding scoreboard
     #region Scoreboard operation functions
 
     public void InsertIntoScoreboard(string _playerName)

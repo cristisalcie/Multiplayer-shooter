@@ -1,6 +1,7 @@
 ﻿using Mirror;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -54,11 +55,6 @@ public class PlayerScript : NetworkBehaviour
     private PlayerShoot playerShoot;
     private int selectedWeaponLocal;
 
-    [SyncVar]
-    private int kills;
-    [SyncVar]
-    private int deaths;
-
     private void Awake()
     {
         // Find canvasInGameHUD script
@@ -88,9 +84,6 @@ public class PlayerScript : NetworkBehaviour
         lookSensitivityV = 5f;
 
         #endregion
-
-        kills = 0;
-        deaths = 0;
     }
 
     public override void OnStartLocalPlayer()
@@ -189,13 +182,13 @@ public class PlayerScript : NetworkBehaviour
         // Test scoreboard sorting by having a way of increasing kills/deaths for a player
         if (Input.GetKeyDown(KeyCode.K))
         {
-            Camera.main.transform.SetParent(null);
-            //CmdIncreaseKillTestFunc();
+            //Camera.main.transform.SetParent(null);
+            CmdIncreaseKillTestFunc();
         }
         if (Input.GetKeyDown(KeyCode.L))
         {
-            Camera.main.transform.SetParent(transform);
-            //CmdIncreaseDeathTestFunc();
+            //Camera.main.transform.SetParent(transform);
+            CmdIncreaseDeathTestFunc();
         }
     }
 
@@ -204,6 +197,7 @@ public class PlayerScript : NetworkBehaviour
     private void OnNameChanged(string _Old, string _New)
     {
         playerNameText.text = playerName;
+        playerState.SetPlayerName(playerName);
     }
 
     private void OnColorChanged(Color _Old, Color _New)
@@ -247,6 +241,9 @@ public class PlayerScript : NetworkBehaviour
             playerState.TargetSetHealthPoints(_playerState.gameObject, _playerState.HealthPoints);
         }
 
+        // Request the unused scripts of the new joined player to be deactivated in everyone else's scene
+        RpcDeactivateUnusedScripts();
+
         // Insert and update scoreboard
         ((GameNetworkManager)GameNetworkManager.singleton).InsertIntoScoreboard(playerName);
         RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
@@ -255,7 +252,6 @@ public class PlayerScript : NetworkBehaviour
     [Command]
     public void CmdIncreaseKillTestFunc()
     {
-        ++kills;
         ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardKillsOf(playerName);
         RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
@@ -263,7 +259,6 @@ public class PlayerScript : NetworkBehaviour
     [Command]
     public void CmdIncreaseDeathTestFunc()
     {
-        ++deaths;
         ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardDeathsOf(playerName);
         RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
     }
@@ -282,6 +277,16 @@ public class PlayerScript : NetworkBehaviour
     public void RpcUpdateScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
     {
         canvasInGameHUD.UpdateScoreboardUI(_scoreboardPlayerList);
+    }
+
+    /// <summary>
+    /// Called on every connected client on the new joined player GameObject.
+    /// </summary>
+    [ClientRpc(includeOwner = false)]
+    public void RpcDeactivateUnusedScripts()
+    {
+        GetComponent<CharacterController>().enabled = false;
+        GetComponent<PlayerMotor>().enabled = false;
     }
 
     #endregion
