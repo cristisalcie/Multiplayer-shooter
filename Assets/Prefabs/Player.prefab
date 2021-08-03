@@ -210,6 +210,8 @@ MonoBehaviour:
   nameTag: {fileID: 2063446140706669415}
   playerName: 
   playerColor: {r: 1, g: 1, b: 1, a: 1}
+  someOtherPlayerPrefab: {fileID: 4577274501743249392, guid: a9cdc84c73205e144ad288eea77e0b6d,
+    type: 3}
 --- !u!114 &-6090267601611509612
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -261,7 +263,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
-  isDead: 0
 --- !u!114 &6829317719256338351
 MonoBehaviour:
   m_ObjectHideFlags: 0

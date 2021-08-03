@@ -55,20 +55,6 @@ public class CanvasInGameHUD : MonoBehaviour
 
     private GameObject[] scoreboardPlayerListUI;
 
-    private ScoreboardListComparer scoreboardListComparer;
-
-    private class ScoreboardListComparer : IComparer<GameNetworkManager.ScoreboardData>
-    {
-        public int Compare(GameNetworkManager.ScoreboardData x, GameNetworkManager.ScoreboardData y)
-        {
-            if (x.kills < y.kills)
-            {
-                return 1;
-            }
-            return 0;
-        }
-    }
-
     #endregion
 
     private void Awake()
@@ -90,7 +76,6 @@ public class CanvasInGameHUD : MonoBehaviour
                 t.text = string.Empty;
             }
         }
-        scoreboardListComparer = new ScoreboardListComparer();
 
         #endregion
     }
@@ -238,8 +223,6 @@ public class CanvasInGameHUD : MonoBehaviour
     public void UpdateScoreboardUI(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
     {
         // Called when scoreboard changed and it must be updated into UI
-        _scoreboardPlayerList.Sort(scoreboardListComparer);
-
         for (int i = 0; i < GameNetworkManager.singleton.maxConnections; ++i)
         {
             if (i < _scoreboardPlayerList.Count)  // Set player information entry

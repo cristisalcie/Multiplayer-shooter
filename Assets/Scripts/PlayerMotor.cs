@@ -137,10 +137,13 @@ public class PlayerMotor : NetworkBehaviour
         #region Initialize camera variables/constants
         if (isLocalPlayer)  // Only the script attached to local player needs to find and get the rawCameraTransform
         {
-            rawCameraTransform = transform.Find("RawCameraTransform");
+            cameraOffset = PlayerScript.cameraOffset;
 
-            // Raw camera transform will be set by PlayerScript to cameraOffset
-            cameraOffset = rawCameraTransform.localPosition;
+            // Set raw camera object
+            rawCameraTransform = GameObject.Find("RawCameraTransform").transform;
+            rawCameraTransform.transform.SetParent(transform);
+            rawCameraTransform.transform.localPosition = cameraOffset;
+            rawCameraTransform.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
 
             cameraToPlayerDistance = Vector3.Distance(transform.position + Vector3.up * cameraOffset.y, rawCameraTransform.position);
         }

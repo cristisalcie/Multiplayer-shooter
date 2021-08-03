@@ -4,9 +4,6 @@ using UnityEngine.SceneManagement;
 
 public class SceneScript : NetworkBehaviour
 {
-    // Networked objects will not be always be found with "Find" which is why we use a sceneReference that is a monoBehaviour
-    public SceneReference sceneReference;
-
     public void ButtonChangeScene()
     {
         if (isServer)

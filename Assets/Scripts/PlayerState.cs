@@ -35,6 +35,7 @@ public class PlayerState : NetworkBehaviour
     public void SetPlayerName(string _playerName)
     {
         playerName = _playerName;
+        Debug.Log($"player name is set to {playerName}");
     }
 
     #region Coroutines
@@ -129,12 +130,16 @@ public class PlayerState : NetworkBehaviour
             _targetPlayerState.HealthPoints = 0;
             _targetPlayerState.IsDead = true;
 
-            ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardDeathsOf(_targetName);
-            ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardKillsOf(playerName);
-            /* Doesn't matter which script gets this because there is only one canvas on each client that can be updated by anyone.
-             * In this case it will be the one who died. Example. X got killed => X's playerState script updates the canvas
+            // Update values on server.
+            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(_targetName);
+            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(playerName);
+
+            /* Doesn't matter which script gets this because there is only one scoreboard list on each client that can be updated by anyone.
+             * In this case it will be the one who died. Example. X got killed => X's playerState script updates the list
              * on all connected clients. */
-            _targetPlayerScript.RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+            // Update values on clients.
+            _targetPlayerScript.RpcIncrementScoreboardDeathsOf(_targetName);
+            _targetPlayerScript.RpcIncrementScoreboardKillsOf(playerName);
 
             // Let the killed player know who killed him.
             _targetPlayerState.TargetSetKiller(playerName);

@@ -25,7 +25,7 @@ public class PlayerScript : NetworkBehaviour
 
     #region Camera related variables/constants
 
-    private Vector3 cameraOffset;
+    public static Vector3 cameraOffset = new Vector3(0.5f, 1.4f, -2f);
     [SerializeField]
     private float lookSensitivityH;
     [SerializeField]
@@ -53,12 +53,14 @@ public class PlayerScript : NetworkBehaviour
 
     private PlayerState playerState;
     private PlayerShoot playerShoot;
+    private ScoreboardScript scoreboard;
     private int selectedWeaponLocal;
 
     private void Awake()
     {
         // Find canvasInGameHUD script
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
+        scoreboard = GameObject.Find("ScoreboardScript").GetComponent<ScoreboardScript>();
 
         #region Initialize motion variables/constants
 
@@ -79,7 +81,6 @@ public class PlayerScript : NetworkBehaviour
 
         #region Initialize camera variables/constants
 
-        cameraOffset = new Vector3(0.5f, 1.4f, -2f);
         lookSensitivityH = 5f;
         lookSensitivityV = 5f;
 
@@ -97,18 +98,10 @@ public class PlayerScript : NetworkBehaviour
 
         #region Initialize camera variables/constants
 
-        Debug.Log(Camera.main.transform.parent + ": is parent of main camera");
-
         // Lock player on camera. Once taken from scene it will destroy with player prefab unless we set parent back to null (give camera to scene).
         Camera.main.transform.SetParent(transform);
         Camera.main.transform.localPosition = cameraOffset;
         Camera.main.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
-
-        // Set raw camera object
-        GameObject _rawCameraObject = GameObject.Find("RawCameraTransform");
-        _rawCameraObject.transform.SetParent(transform);
-        _rawCameraObject.transform.localPosition = cameraOffset;
-        _rawCameraObject.transform.localRotation = new Quaternion(0f, 0f, 0f, 0f);
 
         #endregion
 
@@ -116,7 +109,15 @@ public class PlayerScript : NetworkBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        string _name = "Player" + UnityEngine.Random.Range(100, 999);
+        string _name = "Player" + netIdentity.netId;
+        if (((GameNetworkManager)GameNetworkManager.singleton).playerName == null)  // Name was not set by client in Lobby scene
+        {
+            ((GameNetworkManager)GameNetworkManager.singleton).playerName = _name;
+        }
+        else  // Name was set by client in Lobby scene
+        {
+            _name = ((GameNetworkManager)GameNetworkManager.singleton).playerName;
+        }
 
         Color _color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
 
@@ -222,6 +223,7 @@ public class PlayerScript : NetworkBehaviour
         // Player info sent to server, then server updates sync vars which handles it on all clients
         playerState.SetupState();
 
+        playerState.SetPlayerName(_name);  // Because on client is changed on hook
         playerName = _name;
         playerColor = _col;
         RpcReceive($"{playerName} joined".Trim(), false);
@@ -245,22 +247,24 @@ public class PlayerScript : NetworkBehaviour
         RpcDeactivateUnusedScripts();
 
         // Insert and update scoreboard
-        ((GameNetworkManager)GameNetworkManager.singleton).InsertIntoScoreboard(playerName);
-        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+        ((GameNetworkManager)GameNetworkManager.singleton).OnServerInsertIntoScoreboard(playerName);
+
+        RpcInsertIntoScoreboard(playerName);
+        TargetSaveScoreboard(((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList());
     }
 
     [Command]
     public void CmdIncreaseKillTestFunc()
     {
-        ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardKillsOf(playerName);
-        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+        ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(playerName);
+        RpcIncrementScoreboardKillsOf(playerName);
     }
 
     [Command]
     public void CmdIncreaseDeathTestFunc()
     {
-        ((GameNetworkManager)GameNetworkManager.singleton).IncrementScoreboardDeathsOf(playerName);
-        RpcUpdateScoreboard(((GameNetworkManager)GameNetworkManager.singleton).GetScoreboardPlayerList());
+        ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(playerName);
+        RpcIncrementScoreboardDeathsOf(playerName);
     }
 
     #endregion
@@ -274,9 +278,28 @@ public class PlayerScript : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcUpdateScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
+    public void RpcIncrementScoreboardKillsOf(string _playerName)
     {
-        canvasInGameHUD.UpdateScoreboardUI(_scoreboardPlayerList);
+        scoreboard.IncrementKillsOf(_playerName);
+        Debug.Log($"I incremented kills of {_playerName} from {playerName} script");
+    }
+
+    [ClientRpc]
+    public void RpcIncrementScoreboardDeathsOf(string _playerName)
+    {
+        scoreboard.IncrementDeathsOf(_playerName);
+    }
+
+    [ClientRpc]
+    public void RpcRemoveFromScoreboard(string _playerName)
+    {
+        scoreboard.Remove(_playerName);
+    }
+
+    [ClientRpc(includeOwner = false)]
+    public void RpcInsertIntoScoreboard(string _playerName)
+    {
+        scoreboard.Append(_playerName);
     }
 
     /// <summary>
@@ -287,6 +310,16 @@ public class PlayerScript : NetworkBehaviour
     {
         GetComponent<CharacterController>().enabled = false;
         GetComponent<PlayerMotor>().enabled = false;
+    }
+
+    #endregion
+
+    #region TargetRpc
+
+    [TargetRpc]
+    private void TargetSaveScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
+    {
+        scoreboard.SaveScoreboardOnClient(_scoreboardPlayerList);
     }
 
     #endregion
