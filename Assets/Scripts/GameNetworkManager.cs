@@ -6,6 +6,7 @@ public class GameNetworkManager : NetworkManager
 {
     public struct ScoreboardData
     {
+        public uint uniqueId;
         public string playerName;
         public int kills;
         public int deaths;
@@ -166,6 +167,8 @@ public class GameNetworkManager : NetworkManager
     public override void OnServerDisconnect(NetworkConnection conn)
     {
         PlayerScript _dcPlayerScript = conn.identity.gameObject.GetComponent<PlayerScript>();
+        uint _dcPlayerUniqueId = conn.identity.netId;
+
         if (numPlayers > 0)
         {
             PlayerScript _playerScript = null;
@@ -179,8 +182,8 @@ public class GameNetworkManager : NetworkManager
             if (_playerScript != null)
             {
                 _playerScript.RpcReceive($"{_dcPlayerScript.playerName} disconnected", false);
-                OnServerRemoveFromScoreboard(_dcPlayerScript.playerName);
-                _playerScript.RpcRemoveFromScoreboard(_dcPlayerScript.playerName);
+                OnServerRemoveFromScoreboard(_dcPlayerUniqueId);
+                _playerScript.RpcRemoveFromScoreboard(_dcPlayerUniqueId);
             }
         }
 
@@ -263,23 +266,16 @@ public class GameNetworkManager : NetworkManager
 
     #region Scoreboard on server operation functions
 
-    public void OnServerInsertIntoScoreboard(string _playerName)
+    public void OnServerAppendToScoreboard(uint _uniqueId, string _playerName)
     {
-        for (int i = 0; i < onServerScoreboardPlayerList.Count; ++i)
-        {
-            if (onServerScoreboardPlayerList[i].playerName == _playerName)
-            {
-                return;
-            }
-        }
-        onServerScoreboardPlayerList.Add(new ScoreboardData { playerName = _playerName, kills = 0, deaths = 0 });
+        onServerScoreboardPlayerList.Add(new ScoreboardData { uniqueId = _uniqueId, playerName = _playerName, kills = 0, deaths = 0 });
     }
 
-    public void OnServerRemoveFromScoreboard(string _playerName)
+    public void OnServerRemoveFromScoreboard(uint _uniqueId)
     {
         for (int i = 0; i < onServerScoreboardPlayerList.Count; ++i)
         {
-            if (onServerScoreboardPlayerList[i].playerName == _playerName)
+            if (onServerScoreboardPlayerList[i].uniqueId == _uniqueId)
             {
                 onServerScoreboardPlayerList.RemoveAt(i);
                 break;
@@ -292,11 +288,11 @@ public class GameNetworkManager : NetworkManager
         return onServerScoreboardPlayerList;
     }
 
-    public void OnServerIncrementScoreboardKillsOf(string _playerName)
+    public void OnServerIncrementScoreboardKillsOf(uint _uniqueId)
     {
         for (int i = 0; i < onServerScoreboardPlayerList.Count; ++i)
         {
-            if (onServerScoreboardPlayerList[i].playerName == _playerName)
+            if (onServerScoreboardPlayerList[i].uniqueId == _uniqueId)
             {
                 ScoreboardData _sd = onServerScoreboardPlayerList[i];
                 _sd.kills = onServerScoreboardPlayerList[i].kills + 1;
@@ -306,11 +302,11 @@ public class GameNetworkManager : NetworkManager
         }
     }
 
-    public void OnServerIncrementScoreboardDeathsOf(string _playerName)
+    public void OnServerIncrementScoreboardDeathsOf(uint _uniqueId)
     {
         for (int i = 0; i < onServerScoreboardPlayerList.Count; ++i)
         {
-            if (onServerScoreboardPlayerList[i].playerName == _playerName)
+            if (onServerScoreboardPlayerList[i].uniqueId == _uniqueId)
             {
                 ScoreboardData _sd = onServerScoreboardPlayerList[i];
                 _sd.deaths = onServerScoreboardPlayerList[i].deaths + 1;

@@ -35,7 +35,6 @@ public class PlayerState : NetworkBehaviour
     public void SetPlayerName(string _playerName)
     {
         playerName = _playerName;
-        Debug.Log($"player name is set to {playerName}");
     }
 
     #region Coroutines
@@ -119,7 +118,8 @@ public class PlayerState : NetworkBehaviour
     {
         PlayerState _targetPlayerState = _target.GetComponent<PlayerState>();
         PlayerScript _targetPlayerScript = _target.GetComponent<PlayerScript>();
-        string _targetName = _targetPlayerScript.playerName;
+        uint _targetUniqueId = _target.GetComponent<NetworkIdentity>().netId;
+        uint _uniqueId = netIdentity.netId;
 
         // Have server know the values of the variables as well so it can provide them for new connections directly
         if (_targetPlayerState.IsDead) { return; }
@@ -131,15 +131,15 @@ public class PlayerState : NetworkBehaviour
             _targetPlayerState.IsDead = true;
 
             // Update values on server.
-            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(_targetName);
-            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(playerName);
+            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(_targetUniqueId);
+            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(_uniqueId);
 
             /* Doesn't matter which script gets this because there is only one scoreboard list on each client that can be updated by anyone.
              * In this case it will be the one who died. Example. X got killed => X's playerState script updates the list
              * on all connected clients. */
             // Update values on clients.
-            _targetPlayerScript.RpcIncrementScoreboardDeathsOf(_targetName);
-            _targetPlayerScript.RpcIncrementScoreboardKillsOf(playerName);
+            _targetPlayerScript.RpcIncrementScoreboardDeathsOf(_targetUniqueId);
+            _targetPlayerScript.RpcIncrementScoreboardKillsOf(_uniqueId);
 
             // Let the killed player know who killed him.
             _targetPlayerState.TargetSetKiller(playerName);

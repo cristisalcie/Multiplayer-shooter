@@ -247,24 +247,33 @@ public class PlayerScript : NetworkBehaviour
         RpcDeactivateUnusedScripts();
 
         // Insert and update scoreboard
-        ((GameNetworkManager)GameNetworkManager.singleton).OnServerInsertIntoScoreboard(playerName);
+        ((GameNetworkManager)GameNetworkManager.singleton).OnServerAppendToScoreboard(netIdentity.netId, playerName);
 
-        RpcInsertIntoScoreboard(playerName);
+        RpcInsertIntoScoreboard(netIdentity.netId, playerName);
         TargetSaveScoreboard(((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList());
+    }
+
+    [Command]
+    private void CmdChangeMyName(uint _uniqueId, string _newPlayerName)
+    {
+        RpcReceive($"{playerName} changed name to {_newPlayerName} since there is a name conflict with another client", false);
+        playerState.SetPlayerName(_newPlayerName);
+        playerName = _newPlayerName;
+        RpcChangeNameInScoreboard(_uniqueId, _newPlayerName);
     }
 
     [Command]
     public void CmdIncreaseKillTestFunc()
     {
-        ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(playerName);
-        RpcIncrementScoreboardKillsOf(playerName);
+        ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(netIdentity.netId);
+        RpcIncrementScoreboardKillsOf(netIdentity.netId);
     }
 
     [Command]
     public void CmdIncreaseDeathTestFunc()
     {
-        ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(playerName);
-        RpcIncrementScoreboardDeathsOf(playerName);
+        ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(netIdentity.netId);
+        RpcIncrementScoreboardDeathsOf(netIdentity.netId);
     }
 
     #endregion
@@ -278,28 +287,33 @@ public class PlayerScript : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcIncrementScoreboardKillsOf(string _playerName)
+    public void RpcIncrementScoreboardKillsOf(uint _uniqueId)
     {
-        scoreboard.IncrementKillsOf(_playerName);
-        Debug.Log($"I incremented kills of {_playerName} from {playerName} script");
+        scoreboard.IncrementKillsOf(_uniqueId);
     }
 
     [ClientRpc]
-    public void RpcIncrementScoreboardDeathsOf(string _playerName)
+    public void RpcIncrementScoreboardDeathsOf(uint _uniqueId)
     {
-        scoreboard.IncrementDeathsOf(_playerName);
+        scoreboard.IncrementDeathsOf(_uniqueId);
     }
 
     [ClientRpc]
-    public void RpcRemoveFromScoreboard(string _playerName)
+    public void RpcRemoveFromScoreboard(uint _uniqueId)
     {
-        scoreboard.Remove(_playerName);
+        scoreboard.Remove(_uniqueId);
     }
 
     [ClientRpc(includeOwner = false)]
-    public void RpcInsertIntoScoreboard(string _playerName)
+    public void RpcInsertIntoScoreboard(uint _uniqueId, string _playerName)
     {
-        scoreboard.Append(_playerName);
+        scoreboard.Append(_uniqueId, _playerName);
+    }
+
+    [ClientRpc]
+    public void RpcChangeNameInScoreboard(uint _uniqueId, string _newPlayerName)
+    {
+        scoreboard.ChangePlayerNameInScoreboard(netIdentity.netId, _newPlayerName);
     }
 
     /// <summary>
@@ -319,7 +333,14 @@ public class PlayerScript : NetworkBehaviour
     [TargetRpc]
     private void TargetSaveScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)
     {
+        string _playerName = ((GameNetworkManager)GameNetworkManager.singleton).playerName;
+        string _newPlayerName = $"{_playerName}_{netIdentity.netId}";
+
         scoreboard.SaveScoreboardOnClient(_scoreboardPlayerList);
+        if (scoreboard.PlayerNameExists(netIdentity.netId, _playerName))
+        {
+            CmdChangeMyName(netIdentity.netId, $"{_playerName}_{netIdentity.netId}");
+        }
     }
 
     #endregion
