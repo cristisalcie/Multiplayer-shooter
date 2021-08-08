@@ -114,4 +114,16 @@ public class ScoreboardScript : MonoBehaviour
         }
         canvasInGameHUD.UpdateScoreboardUI(scoreboardPlayerList);
     }
+
+    public void ResetKD()
+    {
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
+        {
+            GameNetworkManager.ScoreboardData _sd = scoreboardPlayerList[i];
+            _sd.kills = 0;
+            _sd.deaths = 0;
+            scoreboardPlayerList[i] = _sd;
+        }
+        canvasInGameHUD.UpdateScoreboardUI(scoreboardPlayerList);
+    }
 }

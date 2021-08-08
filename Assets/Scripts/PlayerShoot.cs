@@ -7,6 +7,7 @@ public class PlayerShoot : NetworkBehaviour
     private PlayerState playerState;
     private CanvasInGameHUD canvasInGameHUD;
     private AnimationStateController animationController;
+    private MatchScript matchScript;
 
     [SerializeField]
     private int selectedWeaponLocal;
@@ -24,6 +25,7 @@ public class PlayerShoot : NetworkBehaviour
     {
         playerState = GetComponent<PlayerState>();
         animationController = GetComponent<AnimationStateController>();
+        matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
 
         selectedWeaponLocal = 1;
         activeWeaponSynced = 1;
@@ -44,9 +46,14 @@ public class PlayerShoot : NetworkBehaviour
         if (selectedWeaponLocal < weaponArray.Length && weaponArray[selectedWeaponLocal] != null)
         {
             ActiveWeapon = weaponArray[selectedWeaponLocal].GetComponent<Weapon>();
-            canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo);
         }
         weaponCooldownTime = 0;
+    }
+
+    public override void OnStartLocalPlayer()
+    {
+        base.OnStartLocalPlayer();
+        canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo);
     }
 
     private void OnWeaponChanged(int _Old, int _New)
@@ -119,7 +126,8 @@ public class PlayerShoot : NetworkBehaviour
     /// <summary> Called in PlayerScript update function </summary>
     public void HandleShootWeaponInput()
     {
-        bool _isShooting = Input.GetButton("Fire1") && ActiveWeapon && ActiveWeapon.weaponAmmo > 0 && selectedWeaponLocal != 0 && Time.time > weaponCooldownTime;
+        bool _isShooting = Input.GetButton("Fire1") && ActiveWeapon && ActiveWeapon.weaponAmmo > 0 && selectedWeaponLocal != 0 && Time.time > weaponCooldownTime
+            && matchScript.MatchStarted && !matchScript.MatchFinished;
         if (_isShooting)
         {
             weaponCooldownTime = Time.time + ActiveWeapon.weaponCooldown;

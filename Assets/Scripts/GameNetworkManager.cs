@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
+using UnityEngine.SceneManagement;
 
 public class GameNetworkManager : NetworkManager
 {
@@ -12,10 +13,15 @@ public class GameNetworkManager : NetworkManager
         public int deaths;
     }
 
-    private List<ScoreboardData> onServerScoreboardPlayerList;
+    private List<ScoreboardData> scoreboardPlayerList;
 
     [Tooltip("This is always set to null in Awake")]
     public string playerName;
+
+    [Tooltip("This is always set to 20 in Awake")]
+    public uint maxKills;
+
+    private MatchScript matchScript;
 
     #region Unity Callbacks
 
@@ -31,8 +37,9 @@ public class GameNetworkManager : NetworkManager
     public override void Awake()
     {
         base.Awake();
-        onServerScoreboardPlayerList = new List<ScoreboardData> { Capacity = maxConnections };
+        scoreboardPlayerList = new List<ScoreboardData> { Capacity = maxConnections };
         playerName = null;
+        maxKills = 3;
     }
 
     /// <summary>
@@ -131,6 +138,11 @@ public class GameNetworkManager : NetworkManager
 
     #region Server System Callbacks
 
+    public void OnServerSetMatchScript(MatchScript _matchScript)
+    {
+        matchScript = _matchScript;
+    }
+
     /// <summary>
     /// Called on the server when a new client connects.
     /// <para> Unity calls this on the Server when a Client connects to the Server. Use an override to tell the NetworkManager what to do
@@ -181,6 +193,11 @@ public class GameNetworkManager : NetworkManager
             }
             if (_playerScript != null)
             {
+                if (NetworkServer.connections.Count == 1 && matchScript.isActiveAndEnabled)
+                {
+                    // Premature win of _playerScript
+                    matchScript.OnServerMatchFinished(_playerScript.netIdentity.connectionToClient, _playerScript.playerName);
+                }
                 _playerScript.RpcReceive($"{_dcPlayerScript.playerName} disconnected", false);
                 OnServerRemoveFromScoreboard(_dcPlayerUniqueId);
                 _playerScript.RpcRemoveFromScoreboard(_dcPlayerUniqueId);
@@ -213,6 +230,10 @@ public class GameNetworkManager : NetworkManager
     public override void OnClientDisconnect(NetworkConnection conn)
     {
         base.OnClientDisconnect(conn);
+        if (SceneManager.GetActiveScene().name == "Lobby")
+        {
+            GameObject.Find("Canvas").GetComponent<CanvasLobbyHUD>().SetupCanvas();
+        }
     }
 
     /// <summary>
@@ -268,16 +289,16 @@ public class GameNetworkManager : NetworkManager
 
     public void OnServerAppendToScoreboard(uint _uniqueId, string _playerName)
     {
-        onServerScoreboardPlayerList.Add(new ScoreboardData { uniqueId = _uniqueId, playerName = _playerName, kills = 0, deaths = 0 });
+        scoreboardPlayerList.Add(new ScoreboardData { uniqueId = _uniqueId, playerName = _playerName, kills = 0, deaths = 0 });
     }
 
     public void OnServerRemoveFromScoreboard(uint _uniqueId)
     {
-        for (int i = 0; i < onServerScoreboardPlayerList.Count; ++i)
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
         {
-            if (onServerScoreboardPlayerList[i].uniqueId == _uniqueId)
+            if (scoreboardPlayerList[i].uniqueId == _uniqueId)
             {
-                onServerScoreboardPlayerList.RemoveAt(i);
+                scoreboardPlayerList.RemoveAt(i);
                 break;
             }
         }
@@ -285,18 +306,18 @@ public class GameNetworkManager : NetworkManager
 
     public List<ScoreboardData> OnServerGetScoreboardPlayerList()
     {
-        return onServerScoreboardPlayerList;
+        return scoreboardPlayerList;
     }
 
     public void OnServerIncrementScoreboardKillsOf(uint _uniqueId)
     {
-        for (int i = 0; i < onServerScoreboardPlayerList.Count; ++i)
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
         {
-            if (onServerScoreboardPlayerList[i].uniqueId == _uniqueId)
+            if (scoreboardPlayerList[i].uniqueId == _uniqueId)
             {
-                ScoreboardData _sd = onServerScoreboardPlayerList[i];
-                _sd.kills = onServerScoreboardPlayerList[i].kills + 1;
-                onServerScoreboardPlayerList[i] = _sd;
+                ScoreboardData _sd = scoreboardPlayerList[i];
+                _sd.kills = scoreboardPlayerList[i].kills + 1;
+                scoreboardPlayerList[i] = _sd;
                 break;
             }
         }
@@ -304,15 +325,26 @@ public class GameNetworkManager : NetworkManager
 
     public void OnServerIncrementScoreboardDeathsOf(uint _uniqueId)
     {
-        for (int i = 0; i < onServerScoreboardPlayerList.Count; ++i)
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
         {
-            if (onServerScoreboardPlayerList[i].uniqueId == _uniqueId)
+            if (scoreboardPlayerList[i].uniqueId == _uniqueId)
             {
-                ScoreboardData _sd = onServerScoreboardPlayerList[i];
-                _sd.deaths = onServerScoreboardPlayerList[i].deaths + 1;
-                onServerScoreboardPlayerList[i] = _sd;
+                ScoreboardData _sd = scoreboardPlayerList[i];
+                _sd.deaths = scoreboardPlayerList[i].deaths + 1;
+                scoreboardPlayerList[i] = _sd;
                 break;
             }
+        }
+    }
+
+    public void OnServerResetKDScoreboardPlayerList()
+    {
+        for (int i = 0; i < scoreboardPlayerList.Count; ++i)
+        {
+            ScoreboardData _sd = scoreboardPlayerList[i];
+            _sd.kills = 0;
+            _sd.deaths = 0;
+            scoreboardPlayerList[i] = _sd;
         }
     }
 

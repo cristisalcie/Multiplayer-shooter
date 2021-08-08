@@ -53,8 +53,11 @@ public class PlayerScript : NetworkBehaviour
 
     private PlayerState playerState;
     private PlayerShoot playerShoot;
-    private ScoreboardScript scoreboard;
+    public ScoreboardScript scoreboard;
     private int selectedWeaponLocal;
+
+    private MatchScript matchScript;
+    private Transform spawnPoints;
 
     private void Awake()
     {
@@ -85,6 +88,10 @@ public class PlayerScript : NetworkBehaviour
         lookSensitivityV = 5f;
 
         #endregion
+
+        // Set match script reference
+        matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
+        spawnPoints = GameObject.Find("SpawnPoints").transform;
     }
 
     public override void OnStartLocalPlayer()
@@ -120,6 +127,8 @@ public class PlayerScript : NetworkBehaviour
         }
 
         Color _color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 90);
+
+        matchScript.SetLocalPlayerScript(this);
 
         CmdSetupPlayer(_name, _color);
     }
@@ -193,6 +202,52 @@ public class PlayerScript : NetworkBehaviour
         }
     }
 
+    public void StartForceRespawn()
+    {
+        CmdForceRespawn();
+    }
+
+    private IEnumerator ForceRespawn()
+    {
+        if (isLocalPlayer)
+        {
+            CharacterController charCtrl = GetComponent<CharacterController>();
+            Camera.main.transform.SetParent(null);  // Give camera to scene
+
+            /* Since we are interpolating the position from NetworkTransform we disable Character Controller
+             * to make sure we will not interpolate quickly to spawnpoint and then back at death location. */
+            charCtrl.enabled = false;
+
+            // Disable visual of player before teleporting
+            transform.Find("Robot2").gameObject.SetActive(false);  // This gameobject has the visual robot mesh
+            transform.Find("Root").gameObject.SetActive(false);    // This gameobject has the weapon
+
+            transform.position = spawnPoints.GetChild(UnityEngine.Random.Range(0, spawnPoints.childCount - 1)).position;  // Should be synced by NetworkTransform
+
+            yield return new WaitForSeconds(MatchScript.respawnDisplayTime);
+
+            transform.Find("Robot2").gameObject.SetActive(true);  // This gameobject has the visual robot mesh
+            transform.Find("Root").gameObject.SetActive(true);    // This gameobject has the weapon
+            charCtrl.enabled = true;
+            Camera.main.transform.SetParent(transform);  // Give camera back to our player
+            charCtrl.Move(Vector3.zero);
+
+            playerState.CmdRespawnPlayer();  // This will reset healthPoints
+        }
+        else
+        {
+            transform.Find("Robot2").gameObject.SetActive(false);  // This gameobject has the visual robot mesh
+            transform.Find("Root").gameObject.SetActive(false);    // This gameobject has the weapon
+            transform.Find("NameTag").gameObject.SetActive(false); // This gameobject has the NameTag
+
+            yield return new WaitForSeconds(MatchScript.respawnDisplayTime);
+
+            transform.Find("Robot2").gameObject.SetActive(true);  // This gameobject has the visual robot mesh
+            transform.Find("Root").gameObject.SetActive(true);    // This gameobject has the weapon
+            transform.Find("NameTag").gameObject.SetActive(true); // This gameobject has the NameTag
+        }
+    }
+
     #region Hook functions
 
     private void OnNameChanged(string _Old, string _New)
@@ -222,11 +277,12 @@ public class PlayerScript : NetworkBehaviour
     {
         // Player info sent to server, then server updates sync vars which handles it on all clients
         playerState.SetupState();
-
         playerState.SetPlayerName(_name);  // Because on client is changed on hook
+
         playerName = _name;
         playerColor = _col;
         RpcReceive($"{playerName} joined".Trim(), false);
+
 
         // Request player state data to be sent to the player that just joined
         foreach (KeyValuePair<int, NetworkConnectionToClient> connection in NetworkServer.connections)
@@ -243,14 +299,55 @@ public class PlayerScript : NetworkBehaviour
             playerState.TargetSetHealthPoints(_playerState.gameObject, _playerState.HealthPoints);
         }
 
-        // Request the unused scripts of the new joined player to be deactivated in everyone else's scene
-        RpcDeactivateUnusedScripts();
 
-        // Insert and update scoreboard
+        // Request the useful scripts to be activated for localPlayer (motor, etc)
+        TargetActivateUsefulScripts();
+
+        // Insert and update scoreboard to everyone
         ((GameNetworkManager)GameNetworkManager.singleton).OnServerAppendToScoreboard(netIdentity.netId, playerName);
-
         RpcInsertIntoScoreboard(netIdentity.netId, playerName);
         TargetSaveScoreboard(((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList());
+
+        // Get the match state and make a decision based on it.
+        if (NetworkServer.connections.Count < 2)  // Minimum players to start match
+        //if (NetworkServer.connections.Count < 1)  // Minimum players to start match
+        {
+            // In here we know we are the first player to join this game
+            matchScript.OnServerWaitForPlayers(netIdentity.connectionToClient);
+        }
+        else
+        {
+            // Check if the match has started and we finished showing the display sequence
+            if (matchScript.MatchStarted && !matchScript.preparingMatch)
+            {
+                // If it did, update matchStarted boolean on this client then spawn and play
+                matchScript.TargetUpdateMatchStarted(netIdentity.connectionToClient, true);
+
+                if (matchScript.preparingFinish)
+                {
+                    // The match has also finished (player joined at the end)
+                    matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
+                }
+            }
+            else
+            {
+                if (matchScript.preparingFinish)
+                {
+                    matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
+                }
+                else
+                {
+                    // If it did NOT, get the current countdown and display the appropiate panel
+                    matchScript.OnServerPrepareToStart(netIdentity.connectionToClient);
+                }
+            }
+        }
+    }
+
+    [Command]
+    public void CmdForceRespawn()
+    {
+        RpcForceRespawn();
     }
 
     [Command]
@@ -287,6 +384,12 @@ public class PlayerScript : NetworkBehaviour
     }
 
     [ClientRpc]
+    public void RpcForceRespawn()
+    {
+        StartCoroutine(ForceRespawn());
+    }
+
+    [ClientRpc]
     public void RpcIncrementScoreboardKillsOf(uint _uniqueId)
     {
         scoreboard.IncrementKillsOf(_uniqueId);
@@ -316,19 +419,16 @@ public class PlayerScript : NetworkBehaviour
         scoreboard.ChangePlayerNameInScoreboard(netIdentity.netId, _newPlayerName);
     }
 
-    /// <summary>
-    /// Called on every connected client on the new joined player GameObject.
-    /// </summary>
-    [ClientRpc(includeOwner = false)]
-    public void RpcDeactivateUnusedScripts()
-    {
-        GetComponent<CharacterController>().enabled = false;
-        GetComponent<PlayerMotor>().enabled = false;
-    }
-
     #endregion
 
     #region TargetRpc
+
+    [TargetRpc]
+    public void TargetActivateUsefulScripts()
+    {
+        GetComponent<CharacterController>().enabled = true;
+        GetComponent<PlayerMotor>().enabled = true;
+    }
 
     [TargetRpc]
     private void TargetSaveScoreboard(List<GameNetworkManager.ScoreboardData> _scoreboardPlayerList)

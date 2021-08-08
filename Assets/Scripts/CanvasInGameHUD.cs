@@ -17,37 +17,49 @@ public class CanvasInGameHUD : MonoBehaviour
     public bool blockPlayerInput;
 
     [SerializeField]
-	private Button buttonStop;
-	
-    [SerializeField]
-	private GameObject panelOptions;
-
-	public GameObject panelScoreboard;
+    private Button buttonStop;
 
     [SerializeField]
-	private GameObject panelRespawn;
+    private GameObject panelOptions;
+
+    public GameObject panelScoreboard;
 
     [SerializeField]
-	private GameObject crosshair;
+    private GameObject panelRespawn;
 
     [SerializeField]
-	private GameObject chatWindow;
+    private GameObject panelWaitingForPlayers;
 
-	public GameObject chatMessage;
+    [SerializeField]
+    private GameObject panelPreparingToStart;
+
+    [SerializeField]
+    private GameObject panelMatchWinner;
+
+    [SerializeField]
+    private GameObject crosshair;
+
+    [SerializeField]
+    private GameObject chatWindow;
+
+    public GameObject chatMessage;
 
     #region Text variables/constants
 
     [SerializeField]
-	private Text serverText;
+    private Text serverText;
     [SerializeField]
-	private Text clientText;
+    private Text clientText;
     [SerializeField]
     private Text ammoText;
     [SerializeField]
     private Text healthPointsText;
 
-    public Text killedByText;
-    public Text respawnSecondsText;
+    private Text killedByText;
+    private Text respawnSecondsText;
+    private Text prepareText;
+    private Text preparingToStartSecondsText;
+    private Text matchWinnerText;
 
     #endregion
 
@@ -70,7 +82,7 @@ public class CanvasInGameHUD : MonoBehaviour
         for (int i = 0; i < GameNetworkManager.singleton.maxConnections; ++i)
         {
             scoreboardPlayerListUI[i] = _playerList.transform.GetChild(i).gameObject;
-            for (int j = 0; j < (int)PlayerScoreboardItemField.GetSize ; ++j)
+            for (int j = 0; j < (int)PlayerScoreboardItemField.GetSize; ++j)
             {
                 Text t = scoreboardPlayerListUI[i].transform.GetChild(j).GetComponent<Text>();
                 t.text = string.Empty;
@@ -78,6 +90,22 @@ public class CanvasInGameHUD : MonoBehaviour
         }
 
         #endregion
+
+        #region Initialize preparing to respawn panel variables/constants
+
+        killedByText = panelRespawn.transform.Find("KilledByText").GetComponent<Text>();
+        respawnSecondsText = panelRespawn.transform.Find("SecondsText").GetComponent<Text>();
+
+        #endregion
+
+        #region Initialize preparing to start panel variables/constants
+
+        prepareText = panelPreparingToStart.transform.Find("PrepareText").GetComponent<Text>();
+        preparingToStartSecondsText = panelPreparingToStart.transform.Find("SecondsText").GetComponent<Text>();
+
+        #endregion
+
+        matchWinnerText = panelMatchWinner.transform.Find("MatchWinnerText").GetComponent<Text>();
     }
 
     private void Start()
@@ -99,6 +127,10 @@ public class CanvasInGameHUD : MonoBehaviour
         panelOptions.SetActive(false);
         panelScoreboard.SetActive(false);
         panelRespawn.SetActive(false);
+        panelPreparingToStart.SetActive(false);
+        chatWindow.SetActive(true);
+        chatMessage.SetActive(false);
+        crosshair.SetActive(true);
 
         if (NetworkServer.active) { serverText.text = "Server: active. Transport: " + Transport.activeTransport; }
         if (NetworkClient.isConnected) { clientText.text = "Client: address=" + GameNetworkManager.singleton.networkAddress; }
@@ -250,10 +282,10 @@ public class CanvasInGameHUD : MonoBehaviour
         }
     }
 
-    public void DisplayRespawnPanel(string _killer)
+    public void DisplayRespawnPanel(string _killer, uint _seconds)
     {
         crosshair.SetActive(false);
-        panelRespawn.SetActive(true);
+        respawnSecondsText.text = _seconds.ToString();
         if (_killer == null)
         {
             killedByText.text = "Suicided";
@@ -262,9 +294,10 @@ public class CanvasInGameHUD : MonoBehaviour
         {
             killedByText.text = $"Killed by {_killer}";
         }
+        panelRespawn.SetActive(true);
     }
 
-    public void UpdateRespawnSeconds(int _seconds)
+    public void UpdateRespawnSeconds(uint _seconds)
     {
         respawnSecondsText.text = _seconds.ToString();
     }
@@ -274,5 +307,70 @@ public class CanvasInGameHUD : MonoBehaviour
         panelRespawn.SetActive(false);
         crosshair.SetActive(true);
     }
-}
 
+    public void DisplayWaitingForPlayersPanel()
+    {
+        panelWaitingForPlayers.SetActive(true);
+    }
+
+    public void HideWaitingForPlayersPanel()
+    {
+        panelWaitingForPlayers.SetActive(false);
+    }
+
+    public void DisplayPreparingToStartPanel(uint _seconds)
+    {
+        prepareText.text = "Preparing to start...";
+        preparingToStartSecondsText.text = _seconds.ToString();
+        panelPreparingToStart.SetActive(true);
+    }
+
+    public void UpdatePreparingToStartPanel(uint _seconds)
+    {
+        preparingToStartSecondsText.text = _seconds.ToString();
+    }
+
+    public void HidePreparingToStartPanel()
+    {
+        panelPreparingToStart.SetActive(false);
+    }
+
+    public void DisplayMatchStartedPanel()
+    {
+        // Reusing panelPreparingToStart
+        preparingToStartSecondsText.text = null;
+        prepareText.text = "Match started!";
+        panelPreparingToStart.SetActive(true);
+    }
+
+    public void HideMatchStartedPanel()
+    {
+        // Reusing panelPreparingToStart
+        panelPreparingToStart.SetActive(false);
+    }
+
+    public void DisplayStartingRespawningPanel()
+    {
+        // Reusing panelPreparingToStart
+        preparingToStartSecondsText.text = null;
+        prepareText.text = "Respawning...";
+        panelPreparingToStart.SetActive(true);
+    }
+
+    public void HideStartingRespawningPanel()
+    {
+        // Reusing panelPreparingToStart
+        panelPreparingToStart.SetActive(false);
+    }
+
+    public void DisplayMatchWinnerPanel(string _winner)
+    {
+        matchWinnerText.text = $"Match won by {_winner}";
+        panelMatchWinner.SetActive(true);
+    }
+
+    public void HideMatchWinnerPanel()
+    {
+        panelMatchWinner.SetActive(false);
+    }
+}

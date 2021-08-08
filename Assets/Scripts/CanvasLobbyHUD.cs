@@ -39,6 +39,14 @@ public class CanvasLobbyHUD : MonoBehaviour
         SetupCanvas();
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            SetupCanvas();
+        }
+    }
+
     // Invoked when the value of the text field changes.
     public void AddressChangeCheck()
     {
@@ -86,6 +94,7 @@ public class CanvasLobbyHUD : MonoBehaviour
             }
             else
             {
+                clientText.text = null;
                 PanelStart.SetActive(true);
             }
         }

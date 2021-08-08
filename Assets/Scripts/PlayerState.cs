@@ -1,13 +1,16 @@
 using Mirror;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerState : NetworkBehaviour
 {
     private AnimationStateController animationController;
     private CanvasInGameHUD canvasInGameHUD;
+    private MatchScript matchScript;
     
-    public const int respawnPlayerTime = 5;
+    public const uint respawnPlayerTime = 5;  // Must be >= 1
     public int HealthPoints { get; private set; }  // Server authoritive!
     private int maxHealthPoints;
     public bool IsDead { get; private set; }  // This doesn't have to be sent through network. We can determine if is dead looking at healthPoints
@@ -19,6 +22,7 @@ public class PlayerState : NetworkBehaviour
     {
         spawnPoints = GameObject.Find("SpawnPoints").transform;
         animationController = GetComponent<AnimationStateController>();
+        matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
         maxHealthPoints = 1000;  // Only accesed from Server at the moment
         killer = null;
@@ -40,7 +44,7 @@ public class PlayerState : NetworkBehaviour
     #region Coroutines
 
     /// <summary> Should run on all clients on script attached to the player that requires respawn </summary>
-    private IEnumerator RespawnPlayer()
+    private IEnumerator RespawnDeadPlayer()
     {
         if (isLocalPlayer)
         {
@@ -50,7 +54,7 @@ public class PlayerState : NetworkBehaviour
             Camera.main.transform.SetParent(null);  // Give camera to scene
 
             /* Since we are interpolating the position from NetworkTransform we disable Character Controller
-            to make sure we will not interpolate quickly to spawnpoint and then back at death location. */ 
+             * to make sure we will not interpolate quickly to spawnpoint and then back at death location. */ 
             charCtrl.enabled = false;
 
             // Wait a respawn time
@@ -60,7 +64,7 @@ public class PlayerState : NetworkBehaviour
             transform.Find("Robot2").gameObject.SetActive(false);  // This gameobject has the visual robot mesh
             transform.Find("Root").gameObject.SetActive(false);    // This gameobject has the weapon
         
-            transform.position = spawnPoints.GetChild(Random.Range(0, spawnPoints.childCount - 1)).position;  // Should be synced by NetworkTransform
+            transform.position = spawnPoints.GetChild(UnityEngine.Random.Range(0, spawnPoints.childCount - 1)).position;  // Should be synced by NetworkTransform
 
             yield return new WaitForSeconds(1f);
 
@@ -90,8 +94,8 @@ public class PlayerState : NetworkBehaviour
 
     private IEnumerator DisplayPlayerRespawnPanel()
     {
-        canvasInGameHUD.DisplayRespawnPanel(killer);
-        for (int i = 0; i < respawnPlayerTime; ++i)
+        canvasInGameHUD.DisplayRespawnPanel(killer, respawnPlayerTime);
+        for (uint i = 0; i < respawnPlayerTime; ++i)
         {
             canvasInGameHUD.UpdateRespawnSeconds(respawnPlayerTime - i);
             yield return new WaitForSeconds(1f);
@@ -130,19 +134,39 @@ public class PlayerState : NetworkBehaviour
             _targetPlayerState.HealthPoints = 0;
             _targetPlayerState.IsDead = true;
 
-            // Update values on server.
-            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(_targetUniqueId);
-            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(_uniqueId);
 
             /* Doesn't matter which script gets this because there is only one scoreboard list on each client that can be updated by anyone.
              * In this case it will be the one who died. Example. X got killed => X's playerState script updates the list
              * on all connected clients. */
-            // Update values on clients.
+            
+            if (_targetUniqueId == _uniqueId)  // Suicide
+            {
+                _targetPlayerState.TargetSetKiller(null);
+            }
+            else
+            {
+                ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardKillsOf(_uniqueId);
+                _targetPlayerScript.RpcIncrementScoreboardKillsOf(_uniqueId);
+                _targetPlayerState.TargetSetKiller(playerName);
+            }
+            ((GameNetworkManager)GameNetworkManager.singleton).OnServerIncrementScoreboardDeathsOf(_targetUniqueId);
             _targetPlayerScript.RpcIncrementScoreboardDeathsOf(_targetUniqueId);
-            _targetPlayerScript.RpcIncrementScoreboardKillsOf(_uniqueId);
 
-            // Let the killed player know who killed him.
-            _targetPlayerState.TargetSetKiller(playerName);
+
+            // Check if the killer has won
+            List<GameNetworkManager.ScoreboardData> _scoreboard = ((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList();
+            foreach (GameNetworkManager.ScoreboardData _sd in _scoreboard)
+            {
+                if (_sd.uniqueId == _uniqueId)
+                {
+                    if (_sd.kills >= ((GameNetworkManager)GameNetworkManager.singleton).maxKills)
+                    {
+                        // Killer won!
+                        matchScript.OnServerMatchFinished(netIdentity.connectionToClient, playerName);
+                    }
+                    break;
+                }
+            }
         }
 
         // Called from target's script so we can also update the canvas health points text by just checking if localPlayer
@@ -163,7 +187,7 @@ public class PlayerState : NetworkBehaviour
         {
             IsDead = true;
             animationController.SetIsDead(true);  // This runs on all clients on the hit object's animation state controller
-            StartCoroutine(RespawnPlayer());
+            StartCoroutine(RespawnDeadPlayer());
         }
         else  // Has HealthPoints left
         {

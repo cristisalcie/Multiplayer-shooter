@@ -1,11 +1,17 @@
---- High priority ----
-Merge Lobby script into CanvasLobbyHUD.
+--- Low priority ---
 
---- Very low priority ---
+Make server use the same ScoreboardScript for storing the scoreboard.
 
-Fix camera so it doesn't clips through walls giving the player "wall hack"
+Fix the vertical movement. If we had initial air velocity positive going upwards then
+even if all of the sudden we get isGrounded true we should still continue our 
+movement up.
 
-Turning around (horizontal) in idle is just rotating the player mesh (no animation going on)
+On respawn reset ammo back to initial value
+
+Player join while another one is dead corner case
+
+Turning around (horizontal) in idle is just rotating the player mesh
+(no animation going on)
 
 
 

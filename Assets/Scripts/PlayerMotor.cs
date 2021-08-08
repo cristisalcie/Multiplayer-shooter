@@ -11,6 +11,7 @@ public class PlayerMotor : NetworkBehaviour
 
     private Vector3 velocity;
     private Vector3 rotation;
+    private GameObject hitBoxParent;
 
     #endregion
 
@@ -79,6 +80,7 @@ public class PlayerMotor : NetworkBehaviour
         
         velocity = Vector3.zero;
         rotation = Vector3.zero;
+        hitBoxParent = transform.Find("Root").gameObject;
 
         #endregion
 
@@ -118,7 +120,7 @@ public class PlayerMotor : NetworkBehaviour
         {
             Debug.LogError("Player layer does not exist");
         }
-        groundMask = 1 << walkableLayerIndex | 1 << rampLayerIndex;
+        groundMask = 1 << walkableLayerIndex | 1 << rampLayerIndex | 1 << playerLayerIndex;
         
         #endregion
 
@@ -156,10 +158,10 @@ public class PlayerMotor : NetworkBehaviour
         // In other words if we don't have authority to move this player return
         if (!hasAuthority || !isLocalPlayer) { return; }
         if (!charCtrl.enabled) { return; }
-        UpdateGrounded();
         PerformMovement();
         PerformRotation();
         PerformCameraRotation();
+        //CheckCollisionFlags();
     }
 
     void FixedUpdate()
@@ -171,6 +173,7 @@ public class PlayerMotor : NetworkBehaviour
         ApplyGravity();
         PerformJump();
         FixCameraTransform();
+        UpdateGrounded();
     }
 
     /// <summary> This function is responsible for movement </summary>
@@ -345,6 +348,7 @@ public class PlayerMotor : NetworkBehaviour
     /// <summary> Updates isGrounded internal boolean and resets the allowed number of jumps </summary>
     private void UpdateGrounded()
     {
+        hitBoxParent.SetActive(false);    // This gameobject has the weapon and hit boxes of us that we want to ignore.
         /* First if is going to sometimes detect that we are touching the ground, but not always. Hence the
         need for the else statement. */
         if ((charCtrl.collisionFlags & CollisionFlags.Below) != 0)
@@ -403,6 +407,8 @@ public class PlayerMotor : NetworkBehaviour
         {
             animationController.SetIsGrounded(isGrounded);
         }
+
+        hitBoxParent.gameObject.SetActive(true);    // This gameobject has the weapon and hit boxes of us that we want to ignore.
     }
 
     /// <summary> Applies gravity to player </summary>
@@ -416,6 +422,44 @@ public class PlayerMotor : NetworkBehaviour
         {
             gravity -= gravityConstant * Time.deltaTime;
             charCtrl.Move(Vector3.up * gravity);
+        }
+    }
+
+    private void CheckCollisionFlags()
+    {
+        if (charCtrl.collisionFlags == CollisionFlags.None)
+        {
+            Debug.Log("Free floating!");
+        }
+
+        if ((charCtrl.collisionFlags & CollisionFlags.Sides) != 0)
+        {
+            Debug.Log("Touching sides!");
+        }
+
+        if (charCtrl.collisionFlags == CollisionFlags.Sides)
+        {
+            Debug.Log("Only touching sides, nothing else!");
+        }
+
+        if ((charCtrl.collisionFlags & CollisionFlags.Above) != 0)
+        {
+            Debug.Log("Touching Ceiling!");
+        }
+
+        if (charCtrl.collisionFlags == CollisionFlags.Above)
+        {
+            Debug.Log("Only touching Ceiling, nothing else!");
+        }
+
+        if ((charCtrl.collisionFlags & CollisionFlags.Below) != 0)
+        {
+            Debug.Log("Touching ground!");
+        }
+
+        if (charCtrl.collisionFlags == CollisionFlags.Below)
+        {
+            Debug.Log("Only touching ground, nothing else!");
         }
     }
 }
