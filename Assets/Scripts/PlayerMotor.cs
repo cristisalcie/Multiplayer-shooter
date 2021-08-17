@@ -4,7 +4,7 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMotor : NetworkBehaviour
 {
-    private AnimationStateController animationController;
+    private PlayerAnimationStateController animationController;
     private CharacterController charCtrl;
 
     #region Movement variables/constants
@@ -62,7 +62,7 @@ public class PlayerMotor : NetworkBehaviour
 
     private void Awake()
     {
-        animationController = GetComponent<AnimationStateController>();
+        animationController = GetComponent<PlayerAnimationStateController>();
 
         #region Initialize Character Controller
 
@@ -89,8 +89,8 @@ public class PlayerMotor : NetworkBehaviour
         cameraRotationX = 0f;
         currentCameraRotationX = 0f;
         rotationMultiplier = 100f;
-        lookUpLimit = 75f;
-        lookDownLimit = -75f;
+        lookUpLimit = 60f;
+        lookDownLimit = -60f;
         mustResetCamera = false;
         
         #endregion

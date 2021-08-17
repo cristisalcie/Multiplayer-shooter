@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class PlayerState : NetworkBehaviour
 {
-    private AnimationStateController animationController;
+    private PlayerAnimationStateController animationController;
     private CanvasInGameHUD canvasInGameHUD;
     private MatchScript matchScript;
     
@@ -21,7 +21,7 @@ public class PlayerState : NetworkBehaviour
     private void Awake()
     {
         spawnPoints = GameObject.Find("SpawnPoints").transform;
-        animationController = GetComponent<AnimationStateController>();
+        animationController = GetComponent<PlayerAnimationStateController>();
         matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
         maxHealthPoints = 1000;  // Only accesed from Server at the moment
@@ -153,20 +153,21 @@ public class PlayerState : NetworkBehaviour
             _targetPlayerScript.RpcIncrementScoreboardDeathsOf(_targetUniqueId);
 
 
+            // TODO: uncomment this before finishing project
             // Check if the killer has won
-            List<GameNetworkManager.ScoreboardData> _scoreboard = ((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList();
-            foreach (GameNetworkManager.ScoreboardData _sd in _scoreboard)
-            {
-                if (_sd.uniqueId == _uniqueId)
-                {
-                    if (_sd.kills >= ((GameNetworkManager)GameNetworkManager.singleton).maxKills)
-                    {
-                        // Killer won!
-                        matchScript.OnServerMatchFinished(netIdentity.connectionToClient, playerName);
-                    }
-                    break;
-                }
-            }
+            //List<GameNetworkManager.ScoreboardData> _scoreboard = ((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList();
+            //foreach (GameNetworkManager.ScoreboardData _sd in _scoreboard)
+            //{
+            //    if (_sd.uniqueId == _uniqueId)
+            //    {
+            //        if (_sd.kills >= ((GameNetworkManager)GameNetworkManager.singleton).maxKills)
+            //        {
+            //            // Killer won!
+            //            matchScript.OnServerMatchFinished(netIdentity.connectionToClient, playerName);
+            //        }
+            //        break;
+            //    }
+            //}
         }
 
         // Called from target's script so we can also update the canvas health points text by just checking if localPlayer
@@ -221,7 +222,7 @@ public class PlayerState : NetworkBehaviour
         if (_healthPoints <= 0)
         {
             _targetPlayerState.IsDead = true;
-            _target.GetComponent<AnimationStateController>().SetIsDead(true);  // Set player state to dead
+            _target.GetComponent<PlayerAnimationStateController>().SetIsDead(true);  // Set player state to dead
         }  // Else is false (default)
     }
 

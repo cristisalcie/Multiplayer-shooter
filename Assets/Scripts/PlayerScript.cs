@@ -25,7 +25,9 @@ public class PlayerScript : NetworkBehaviour
 
     #region Camera related variables/constants
 
-    public static Vector3 cameraOffset = new Vector3(0.5f, 1.4f, -2f);
+    public static Vector3 cameraOffset = new Vector3(0.6f, 1.4f, -2f);  // Aligned vertical
+    //public static Vector3 cameraOffset = new Vector3(0.095f, 1.4f, -2f);  // Aligned both horizontal and vertical
+    //public static Vector3 cameraOffset = new Vector3(0.095f, 2f, -2.55f);  // Aligned horizontal
     [SerializeField]
     private float lookSensitivityH;
     [SerializeField]
@@ -308,40 +310,41 @@ public class PlayerScript : NetworkBehaviour
         RpcInsertIntoScoreboard(netIdentity.netId, playerName);
         TargetSaveScoreboard(((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList());
 
+        // TODO: uncomment this before finishing project
         // Get the match state and make a decision based on it.
-        if (NetworkServer.connections.Count < 2)  // Minimum players to start match
-        //if (NetworkServer.connections.Count < 1)  // Minimum players to start match
-        {
-            // In here we know we are the first player to join this game
-            matchScript.OnServerWaitForPlayers(netIdentity.connectionToClient);
-        }
-        else
-        {
-            // Check if the match has started and we finished showing the display sequence
-            if (matchScript.MatchStarted && !matchScript.preparingMatch)
-            {
-                // If it did, update matchStarted boolean on this client then spawn and play
-                matchScript.TargetUpdateMatchStarted(netIdentity.connectionToClient, true);
+        //if (NetworkServer.connections.Count < 2)  // Minimum players to start match
+        ////if (NetworkServer.connections.Count < 1)  // Minimum players to start match
+        //{
+        //    // In here we know we are the first player to join this game
+        //    matchScript.OnServerWaitForPlayers(netIdentity.connectionToClient);
+        //}
+        //else
+        //{
+        //    // Check if the match has started and we finished showing the display sequence
+        //    if (matchScript.MatchStarted && !matchScript.preparingMatch)
+        //    {
+        //        // If it did, update matchStarted boolean on this client then spawn and play
+        //        matchScript.TargetUpdateMatchStarted(netIdentity.connectionToClient, true);
 
-                if (matchScript.preparingFinish)
-                {
-                    // The match has also finished (player joined at the end)
-                    matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
-                }
-            }
-            else
-            {
-                if (matchScript.preparingFinish)
-                {
-                    matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
-                }
-                else
-                {
-                    // If it did NOT, get the current countdown and display the appropiate panel
-                    matchScript.OnServerPrepareToStart(netIdentity.connectionToClient);
-                }
-            }
-        }
+        //        if (matchScript.preparingFinish)
+        //        {
+        //            // The match has also finished (player joined at the end)
+        //            matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        if (matchScript.preparingFinish)
+        //        {
+        //            matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
+        //        }
+        //        else
+        //        {
+        //            // If it did NOT, get the current countdown and display the appropiate panel
+        //            matchScript.OnServerPrepareToStart(netIdentity.connectionToClient);
+        //        }
+        //    }
+        //}
     }
 
     [Command]

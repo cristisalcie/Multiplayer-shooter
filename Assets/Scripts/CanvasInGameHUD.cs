@@ -37,12 +37,12 @@ public class CanvasInGameHUD : MonoBehaviour
     private GameObject panelMatchWinner;
 
     [SerializeField]
-    private GameObject crosshair;
-
-    [SerializeField]
     private GameObject chatWindow;
 
     public GameObject chatMessage;
+
+    [SerializeField]
+    private GameObject crosshair;
 
     #region Text variables/constants
 

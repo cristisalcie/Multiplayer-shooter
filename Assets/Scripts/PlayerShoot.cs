@@ -6,8 +6,10 @@ public class PlayerShoot : NetworkBehaviour
 {
     private PlayerState playerState;
     private CanvasInGameHUD canvasInGameHUD;
-    private AnimationStateController animationController;
+    private CrosshairUI crosshairUI;
+    private PlayerAnimationStateController animationController;
     private MatchScript matchScript;
+    private GameObject hitBoxParent;
 
     [SerializeField]
     private int selectedWeaponLocal;
@@ -24,8 +26,9 @@ public class PlayerShoot : NetworkBehaviour
     private void Awake()
     {
         playerState = GetComponent<PlayerState>();
-        animationController = GetComponent<AnimationStateController>();
+        animationController = GetComponent<PlayerAnimationStateController>();
         matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
+        hitBoxParent = transform.Find("Root").gameObject;
 
         selectedWeaponLocal = 1;
         activeWeaponSynced = 1;
@@ -41,11 +44,14 @@ public class PlayerShoot : NetworkBehaviour
         // Enable only the selected one
         weaponArray[selectedWeaponLocal].SetActive(true);
 
-        canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
+        GameObject _canvas = GameObject.Find("Canvas");
+        canvasInGameHUD = _canvas.GetComponent<CanvasInGameHUD>();
+        crosshairUI = _canvas.GetComponent<CrosshairUI>();
 
         if (selectedWeaponLocal < weaponArray.Length && weaponArray[selectedWeaponLocal] != null)
         {
             ActiveWeapon = weaponArray[selectedWeaponLocal].GetComponent<Weapon>();
+            crosshairUI.activeWeapon = ActiveWeapon;
         }
         weaponCooldownTime = 0;
     }
@@ -53,7 +59,7 @@ public class PlayerShoot : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
-        canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo);
+        canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo);
     }
 
     private void OnWeaponChanged(int _Old, int _New)
@@ -71,8 +77,13 @@ public class PlayerShoot : NetworkBehaviour
             if (_New != 0)  // Meele weapon not implemented
             {
                 ActiveWeapon = weaponArray[activeWeaponSynced].GetComponent<Weapon>();
-                if (isLocalPlayer) { canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo); }
+                if (isLocalPlayer) { canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo); }
             }
+        }
+
+        if (hasAuthority)
+        {
+            crosshairUI.activeWeapon = ActiveWeapon;
         }
     }
 
@@ -126,115 +137,42 @@ public class PlayerShoot : NetworkBehaviour
     /// <summary> Called in PlayerScript update function </summary>
     public void HandleShootWeaponInput()
     {
-        bool _isShooting = Input.GetButton("Fire1") && ActiveWeapon && ActiveWeapon.weaponAmmo > 0 && selectedWeaponLocal != 0 && Time.time > weaponCooldownTime
+        bool _isShooting = Input.GetButton("Fire1") && ActiveWeapon && ActiveWeapon.ammo > 0 && selectedWeaponLocal != 0 && Time.time > weaponCooldownTime
             && matchScript.MatchStarted && !matchScript.MatchFinished;
         if (_isShooting)
         {
-            weaponCooldownTime = Time.time + ActiveWeapon.weaponCooldown;
+            weaponCooldownTime = Time.time + ActiveWeapon.cooldown;
         }
         animationController.ShootWeapon(_isShooting);
     }
 
-    /// <summary> Called by firing animation event </summary>
+    /// <summary> Called by firing animation event but only runs for the client's object </summary>
     public void ShootWeaponBullet()
     {
         if (selectedWeaponLocal != 0 && hasAuthority)  // Meele weapon not implemented
         {
-            ActiveWeapon.weaponAmmo -= 1;
-            canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.weaponAmmo);
+            ActiveWeapon.ammo -= 1;
+            canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo);
 
             // Calculate raycast from camera to match with crosshair location, see what/who it hits and then sync to everyone
+            hitBoxParent.SetActive(false);
             bool _hasHit = Physics.Raycast(
                 Camera.main.transform.position,
                 Camera.main.transform.forward,
                 out RaycastHit _hitInfo,
-                ActiveWeapon.weaponRange);
+                ActiveWeapon.range);
+            hitBoxParent.SetActive(true);
 
-            #region Debug code
-
+            Vector3 _bulletDir;
             if (_hasHit)
             {
-                Debug.Log(_hitInfo.transform.name);
-            }
-            // For visual trail of where bullet is supposed to hit
-            Debug.DrawRay(
-                    Camera.main.transform.position,
-                    Camera.main.transform.forward * ActiveWeapon.weaponRange,
-                    Color.yellow,
-                    30f
-                );
-
-
-            // For visual trail of the bullet trajectory:
-            Debug.DrawLine(
-                ActiveWeapon.weaponFireTransform.position,
-                _hitInfo.point,
-                Color.red,
-                30f);
-
-            #endregion
-
-            if (_hasHit)
+                _bulletDir = (_hitInfo.point - ActiveWeapon.fireLocationTransform.position).normalized;
+            } 
+            else
             {
-                if (_hitInfo.transform.CompareTag("Player"))
-                {
-                    int _damage = 0;
-
-                    //Debug.Log($"Hit player {_hitInfo.transform.GetComponentInParent<PlayerScript>().playerName} in {_hitInfo.transform.name}");
-                    if (_hitInfo.transform.name.IndexOf("head", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        Debug.Log("hit player head inside if");
-                        _damage = 340;
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("ribs", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        Debug.Log("hit player ribs inside if");
-                        _damage = 170;
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("hip", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        Debug.Log("hit player hips inside if");
-                        _damage = 120;
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("thigh", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        _damage = 100;
-                        Debug.Log("hit player thigh inside if");
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("knee", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        _damage = 80;
-                        Debug.Log("hit player knee inside if");
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("toe", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        _damage = 50;
-                        Debug.Log("hit player toe inside if");
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("forearm", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        _damage = 80;
-                        Debug.Log("hit player forearm inside if");
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("arm", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        _damage = 100;
-                        Debug.Log("hit player arm inside if");
-                    }
-                    else if (_hitInfo.transform.name.IndexOf("wrist", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        _damage = 50;
-                        Debug.Log("hit player wrist inside if");
-                    }
-
-                    //GameObject _parent = _hitInfo.transform.GetComponentInParent<PlayerScript>().gameObject;
-                    // Or like this
-                    GameObject _parent = _hitInfo.transform.root.gameObject;
-                    playerState.CmdHit(_parent, _damage);
-                }
+                _bulletDir = Camera.main.transform.forward;
             }
-
-            CmdShootRay();
+            CmdShootRay(_bulletDir);
         }
     }
 
@@ -247,9 +185,9 @@ public class PlayerShoot : NetworkBehaviour
     }
 
     [Command]
-    private void CmdShootRay()
+    private void CmdShootRay(Vector3 _bulletDir)
     {
-        RpcFireWeapon();
+        RpcFireWeapon(_bulletDir);
     }
 
     #endregion
@@ -257,13 +195,12 @@ public class PlayerShoot : NetworkBehaviour
     #region ClientRpc
 
     [ClientRpc]
-    private void RpcFireWeapon()
+    private void RpcFireWeapon(Vector3 _projectileDir)
     {
-        // todo: audio play, draw/instantiate visual effects of raycast
+        // todo: audio play, draw/instantiate visual effects
         //bulletAudio.Play(); muzzleflash  etc
-        var bullet = Instantiate(ActiveWeapon.weaponBullet, ActiveWeapon.weaponFireTransform.position, ActiveWeapon.weaponFireTransform.rotation);
-        bullet.GetComponent<Rigidbody>().velocity = bullet.transform.forward * ActiveWeapon.weaponBulletSpeed;
-        if (bullet) { Destroy(bullet, ActiveWeapon.weaponBulletLife); }
+        GameObject _projectile = Instantiate(ActiveWeapon.projectile, ActiveWeapon.fireLocationTransform.position, ActiveWeapon.fireLocationTransform.rotation);
+        _projectile.GetComponent<NailProjectile>().Setup(gameObject, ActiveWeapon.projectileLife, ActiveWeapon.projectileSpeed, _projectileDir);
     }
 
     #endregion
