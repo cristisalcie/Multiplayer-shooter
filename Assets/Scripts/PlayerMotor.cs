@@ -361,7 +361,7 @@ public class PlayerMotor : NetworkBehaviour
             isGrounded = Physics.Raycast(
                 transform.position + Vector3.up * charCtrl.height / 2f,
                 Vector3.down,
-                charCtrl.height / 2f + charCtrl.skinWidth * 2f,
+                charCtrl.height / 2f + charCtrl.skinWidth * 5f,
                 groundMask);
 
             if (!isGrounded)
@@ -380,7 +380,7 @@ public class PlayerMotor : NetworkBehaviour
                     isGrounded = Physics.Raycast(
                         _rayPosition,
                         Vector3.down,
-                        charCtrl.height / 2f + charCtrl.skinWidth * 2,
+                        charCtrl.height / 2f + charCtrl.skinWidth * 2f,
                         groundMask);
 
                     if (isGrounded) { break; }
@@ -395,10 +395,11 @@ public class PlayerMotor : NetworkBehaviour
         bool _onRamp = Physics.Raycast(
             transform.position + Vector3.up * charCtrl.height / 2f,
             Vector3.down,
+            out RaycastHit _rampInfo,
             charCtrl.height / 2f + charCtrl.skinWidth * 10f,
             1 << rampLayerIndex);
 
-        // The following if will make sure we don't transit between airborne and stand locomotion animations when going down a ramp.
+        // The following if will make sure we don't transit between airborne and stand locomotion animations when going down a ramp
         if (_onRamp)
         {
             animationController.SetIsGrounded(true);
@@ -408,7 +409,7 @@ public class PlayerMotor : NetworkBehaviour
             animationController.SetIsGrounded(isGrounded);
         }
 
-        hitBoxParent.gameObject.SetActive(true);    // This gameobject has the weapon and hit boxes of us that we want to ignore.
+        hitBoxParent.gameObject.SetActive(true);    // This gameobject has the weapon and hit boxes of us that we want to stop ignoring
     }
 
     /// <summary> Applies gravity to player </summary>

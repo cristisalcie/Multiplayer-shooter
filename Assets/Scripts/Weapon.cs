@@ -8,7 +8,7 @@ public class Weapon : MonoBehaviour
     public float projectileLife;
     public int ammo;
     public float cooldown;
-    public int range;
+    public int range;  // Curently only used as a distance for raycasts/linecasts
 
     public GameObject projectile;
     public Transform fireLocationTransform;

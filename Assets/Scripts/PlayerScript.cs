@@ -71,7 +71,7 @@ public class PlayerScript : NetworkBehaviour
 
         // Find playerMotion script
         playerMotion = GetComponent<PlayerMotion>();
-        baseMoveSpeed = 6f;
+        baseMoveSpeed = 5f;
         moveSpeed = baseMoveSpeed;
         maxJumps = 1;
 

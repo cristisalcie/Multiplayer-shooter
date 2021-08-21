@@ -13,5 +13,9 @@ Player join while another one is dead corner case
 Turning around (horizontal) in idle is just rotating the player mesh
 (no animation going on)
 
+Random currently dependent on entire project (everything that uses random depends
+on one another). That means if we shoot 10 projectiles that uses random to change
+direction a tiny bit, it will influence the random from anything else. Fix this.
+
 
 

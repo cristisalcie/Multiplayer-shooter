@@ -22,6 +22,7 @@ public class PlayerShoot : NetworkBehaviour
 
     public Weapon ActiveWeapon { get; private set; }
     private float weaponCooldownTime;
+    private float weaponShootingNoiseValue;
 
     private void Awake()
     {
@@ -54,6 +55,7 @@ public class PlayerShoot : NetworkBehaviour
             crosshairUI.activeWeapon = ActiveWeapon;
         }
         weaponCooldownTime = 0;
+        weaponShootingNoiseValue = 0;
     }
 
     public override void OnStartLocalPlayer()
@@ -141,12 +143,24 @@ public class PlayerShoot : NetworkBehaviour
             && matchScript.MatchStarted && !matchScript.MatchFinished;
         if (_isShooting)
         {
+            float _previousWeaponCooldownTime = weaponCooldownTime;
+
             weaponCooldownTime = Time.time + ActiveWeapon.cooldown;
+
+            // Increase weapon fire rate noise if holding down firing
+            if (weaponCooldownTime - _previousWeaponCooldownTime > 3 * ActiveWeapon.cooldown)
+            {
+                weaponShootingNoiseValue = 0;
+            }
+            else if (weaponShootingNoiseValue < 1)
+            {
+                weaponShootingNoiseValue = Mathf.Clamp(weaponShootingNoiseValue + Time.deltaTime, 0.0f, 1.0f);
+            }
         }
         animationController.ShootWeapon(_isShooting);
     }
 
-    /// <summary> Called by firing animation event but only runs for the client's object </summary>
+    /// <summary> Called by firing animation event but only runs on the client that has authority object </summary>
     public void ShootWeaponBullet()
     {
         if (selectedWeaponLocal != 0 && hasAuthority)  // Meele weapon not implemented
@@ -166,13 +180,14 @@ public class PlayerShoot : NetworkBehaviour
             Vector3 _bulletDir;
             if (_hasHit)
             {
-                _bulletDir = (_hitInfo.point - ActiveWeapon.fireLocationTransform.position).normalized;
+                _bulletDir = _hitInfo.point - ActiveWeapon.fireLocationTransform.position;
             } 
             else
             {
                 _bulletDir = Camera.main.transform.forward;
             }
-            CmdShootRay(_bulletDir);
+
+            CmdShootRay(_bulletDir.normalized);  // Very important to send this argument normalized
         }
     }
 
