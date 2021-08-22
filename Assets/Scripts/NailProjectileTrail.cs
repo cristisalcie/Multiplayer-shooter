@@ -3,7 +3,7 @@ using UnityEngine;
 public class NailProjectileTrail : MonoBehaviour
 {
     private TrailRenderer trail;
-    private const float fadeSpeed = 0.35f;
+    private const float fadeSpeed = 1.6f;
 
     private void Awake()
     {

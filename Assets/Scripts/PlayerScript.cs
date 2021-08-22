@@ -25,9 +25,9 @@ public class PlayerScript : NetworkBehaviour
 
     #region Camera related variables/constants
 
-    public static Vector3 cameraOffset = new Vector3(0.6f, 1.4f, -2f);  // Aligned vertical
+    //public static Vector3 cameraOffset = new Vector3(0.6f, 1.4f, -2f);  // Aligned vertical
     //public static Vector3 cameraOffset = new Vector3(0.095f, 1.4f, -2f);  // Aligned both horizontal and vertical
-    //public static Vector3 cameraOffset = new Vector3(0.095f, 2f, -2.55f);  // Aligned horizontal
+    public static Vector3 cameraOffset = new Vector3(0f, 2f, -2.55f);  // Aligned horizontal
     [SerializeField]
     private float lookSensitivityH;
     [SerializeField]

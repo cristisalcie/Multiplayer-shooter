@@ -7,6 +7,7 @@ public class CrosshairUI : MonoBehaviour
     private GameObject crosshair;
     private Transform dotTransform;
     private RawImage dotImage;
+    private GameObject xFrame;
     private RectTransform frameRectTransform;
 
     private Color dotInitialColor;
@@ -21,6 +22,8 @@ public class CrosshairUI : MonoBehaviour
         middleOfScreen = canvasRectTransform.sizeDelta * canvasRectTransform.localScale / 2;
         dotTransform = crosshair.transform.Find("Dot");
         dotImage = dotTransform.GetComponent<RawImage>();
+        xFrame = crosshair.transform.Find("X").gameObject;
+        xFrame.SetActive(false);
         frameRectTransform = crosshair.transform.Find("Frame").GetComponent<RectTransform>();
         dotInitialColor = dotImage.color;
         activeWeapon = null;
@@ -65,26 +68,29 @@ public class CrosshairUI : MonoBehaviour
         }
         if (_cameraHasHit)
         {
-            Vector3 _targetPosition = _cameraHitInfo.point;  // Wanted position to convert to UI space
-
-            // Following linecast is for the case when camera hits the ground but the weapon hits an object
-            bool _weaponHasHit = Physics.Linecast(
-                activeWeapon.fireLocationTransform.position,
-                _cameraHitInfo.point,
-                out RaycastHit _weaponHitInfo);
+            if (!IsMe(_cameraHitInfo.transform.root.GetComponent<PlayerScript>()))
             {
-                //Debug.DrawLine(
-                //    activeWeapon.weaponFireTransform.position,
-                //    _cameraHitInfo.point,
-                //    Color.red,
-                //    3f);
-            }
+                Vector3 _targetPosition = _cameraHitInfo.point;  // Wanted position to convert to UI space
 
-            if (_weaponHasHit)
-            {
-                _targetPosition = _weaponHitInfo.point;
+                // Following linecast is for the case when camera hits the ground but the weapon hits an object
+                bool _weaponHasHit = Physics.Linecast(
+                    activeWeapon.fireLocationTransform.position,
+                    _cameraHitInfo.point,
+                    out RaycastHit _weaponHitInfo);
+                {
+                    //Debug.DrawLine(
+                    //    activeWeapon.weaponFireTransform.position,
+                    //    _cameraHitInfo.point,
+                    //    Color.red,
+                    //    3f);
+                }
+
+                if (_weaponHasHit)
+                {
+                    _targetPosition = _weaponHitInfo.point;
+                }
+                _newPosition = WorldToCanvasPosition(_targetPosition);
             }
-            _newPosition = WorldToCanvasPosition(_targetPosition);
         }
         else
         {
@@ -104,6 +110,7 @@ public class CrosshairUI : MonoBehaviour
 
             if (_weaponHasHit)
             {
+
                 _newPosition = WorldToCanvasPosition(_weaponHitInfo.point);
             }
 
@@ -116,6 +123,11 @@ public class CrosshairUI : MonoBehaviour
         }
 
         return _newPosition;
+    }
+
+    private bool IsMe(PlayerScript _ps)
+    {
+        return _ps && _ps.hasAuthority;
     }
     
     private Vector2 WorldToCanvasPosition(Vector3 _targetPosition)
@@ -135,5 +147,10 @@ public class CrosshairUI : MonoBehaviour
     {
         dotImage.color = (_position == middleOfScreen) ? dotInitialColor : Color.red;
         dotTransform.position = new Vector3(_position.x, _position.y, 0.0f);
+    }
+
+    public void DisplayX(bool _allowShooting)
+    {
+        xFrame.SetActive(!_allowShooting);
     }
 }

@@ -47,7 +47,7 @@ public class NailProjectile : MonoBehaviour
             rb.velocity = Vector3.zero;
 
             // Fix position
-            rb.position = _hitInfo.point;
+            transform.position = _hitInfo.point;
 
             // Call collision function
             OnColliderHit(_hitInfo.collider);
@@ -119,6 +119,12 @@ public class NailProjectile : MonoBehaviour
         {
             GetComponent<MeshRenderer>().enabled = false;  // Make projectile invisible
         }
+
+        // Disable Rigidbody
+        rb.isKinematic = true;
+
+        // Disable Collider
+        GetComponent<Collider>().enabled = false;
 
         // Set destroy time
         Destroy(gameObject, life);

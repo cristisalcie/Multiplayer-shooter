@@ -17,5 +17,6 @@ Random currently dependent on entire project (everything that uses random depend
 on one another). That means if we shoot 10 projectiles that uses random to change
 direction a tiny bit, it will influence the random from anything else. Fix this.
 
+Meele movement is faster hence animation should be faster.
 
 

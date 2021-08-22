@@ -23,6 +23,8 @@ public class PlayerShoot : NetworkBehaviour
     public Weapon ActiveWeapon { get; private set; }
     private float weaponCooldownTime;
     private float weaponShootingNoiseValue;
+    private const float weaponShootingMaxNoiseValue = 0.03f;
+    private bool allowShooting;
 
     private void Awake()
     {
@@ -56,12 +58,39 @@ public class PlayerShoot : NetworkBehaviour
         }
         weaponCooldownTime = 0;
         weaponShootingNoiseValue = 0;
+        allowShooting = true;
     }
 
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
         canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo);
+    }
+
+    private void FixedUpdate()
+    {
+        if (!isLocalPlayer) { return; }
+        if (canvasInGameHUD.blockPlayerInput) { return; }
+        if (canvasInGameHUD.paused) { return; }
+        if (playerState.IsDead) { return; }
+
+        hitBoxParent.SetActive(false);
+        allowShooting = !Physics.Raycast(
+            ActiveWeapon.transform.position + Vector3.up * 0.04f,
+            ActiveWeapon.fireLocationTransform.forward,
+            out RaycastHit _hitInfo,
+            0.85f); // Last argument stands for range (in this case how long the weapon is)
+        Debug.DrawRay(
+            ActiveWeapon.transform.position + Vector3.up * 0.04f,
+            ActiveWeapon.fireLocationTransform.forward * 0.85f,
+            Color.red,
+            0.1f);
+        if (!allowShooting)
+        {
+            Debug.Log(_hitInfo.transform.name);
+        }
+        crosshairUI.DisplayX(allowShooting);
+        hitBoxParent.SetActive(true);
     }
 
     private void OnWeaponChanged(int _Old, int _New)
@@ -140,7 +169,7 @@ public class PlayerShoot : NetworkBehaviour
     public void HandleShootWeaponInput()
     {
         bool _isShooting = Input.GetButton("Fire1") && ActiveWeapon && ActiveWeapon.ammo > 0 && selectedWeaponLocal != 0 && Time.time > weaponCooldownTime
-            && matchScript.MatchStarted && !matchScript.MatchFinished;
+            && matchScript.MatchStarted && !matchScript.MatchFinished && allowShooting;
         if (_isShooting)
         {
             float _previousWeaponCooldownTime = weaponCooldownTime;
@@ -148,13 +177,13 @@ public class PlayerShoot : NetworkBehaviour
             weaponCooldownTime = Time.time + ActiveWeapon.cooldown;
 
             // Increase weapon fire rate noise if holding down firing
-            if (weaponCooldownTime - _previousWeaponCooldownTime > 3 * ActiveWeapon.cooldown)
+            if (weaponCooldownTime - _previousWeaponCooldownTime > 4 * ActiveWeapon.cooldown)
             {
                 weaponShootingNoiseValue = 0;
             }
-            else if (weaponShootingNoiseValue < 1)
+            else
             {
-                weaponShootingNoiseValue = Mathf.Clamp(weaponShootingNoiseValue + Time.deltaTime, 0.0f, 1.0f);
+                weaponShootingNoiseValue = weaponShootingMaxNoiseValue;
             }
         }
         animationController.ShootWeapon(_isShooting);
@@ -163,7 +192,7 @@ public class PlayerShoot : NetworkBehaviour
     /// <summary> Called by firing animation event but only runs on the client that has authority object </summary>
     public void ShootWeaponBullet()
     {
-        if (selectedWeaponLocal != 0 && hasAuthority)  // Meele weapon not implemented
+        if (hasAuthority)  // Meele weapon not implemented
         {
             ActiveWeapon.ammo -= 1;
             canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo);
@@ -180,12 +209,15 @@ public class PlayerShoot : NetworkBehaviour
             Vector3 _bulletDir;
             if (_hasHit)
             {
-                _bulletDir = _hitInfo.point - ActiveWeapon.fireLocationTransform.position;
+                _bulletDir = (_hitInfo.point - ActiveWeapon.fireLocationTransform.position).normalized;
             } 
             else
             {
                 _bulletDir = Camera.main.transform.forward;
             }
+
+            _bulletDir += weaponShootingNoiseValue
+                * new Vector3(UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(-1f, 1f));
 
             CmdShootRay(_bulletDir.normalized);  // Very important to send this argument normalized
         }
