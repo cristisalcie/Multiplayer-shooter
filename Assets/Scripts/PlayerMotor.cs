@@ -6,6 +6,7 @@ public class PlayerMotor : NetworkBehaviour
 {
     private PlayerAnimationStateController animationController;
     private CharacterController charCtrl;
+    private CrosshairUI crosshairUI;
 
     #region Movement variables/constants
 
@@ -63,6 +64,7 @@ public class PlayerMotor : NetworkBehaviour
     private void Awake()
     {
         animationController = GetComponent<PlayerAnimationStateController>();
+        crosshairUI = GameObject.Find("Canvas").GetComponent<CrosshairUI>();
 
         #region Initialize Character Controller
 
@@ -174,6 +176,53 @@ public class PlayerMotor : NetworkBehaviour
         PerformJump();
         FixCameraTransform();
         UpdateGrounded();
+
+        Vector3 _targetPosition = crosshairUI.targetPosition - crosshairUI.activeWeapon.fireLocationTransform.position;
+        //Debug.DrawLine(
+        //    crosshairUI.activeWeapon.fireLocationTransform.position,
+        //    crosshairUI.targetPosition,
+        //    Color.yellow
+        //    );
+        //Debug.DrawRay(
+        //    crosshairUI.activeWeapon.fireLocationTransform.position,
+        //    crosshairUI.activeWeapon.fireLocationTransform.forward * _targetPosition.magnitude,
+        //    Color.magenta
+        //    );
+        Vector3 _startPosition = transform.position + new Vector3(0.095f, 1.35f, 0);  // Aligned both horizontal and vertical
+        Debug.DrawRay(
+            _startPosition,
+            (crosshairUI.targetPosition - _startPosition).normalized,
+            Color.magenta
+            );
+        //Debug.DrawLine(
+        //    _startPosition,
+        //    crosshairUI.targetPosition,
+        //    Color.blue
+        //    );
+        Debug.DrawRay(
+            _startPosition,
+            transform.forward,
+            Color.green
+            );
+        Debug.Log(Vector3.Angle((crosshairUI.targetPosition - _startPosition).normalized, transform.forward));
+        float _needAngle = Vector3.Angle((crosshairUI.targetPosition - _startPosition).normalized, transform.forward);
+
+        float _verticalAim;
+        if (crosshairUI.targetPosition.y < _startPosition.y)
+        {
+            _verticalAim = _needAngle / lookDownLimit;
+        }
+        else
+        {
+            _verticalAim = _needAngle / lookUpLimit;
+        }
+        _verticalAim = Mathf.Clamp(_verticalAim, -1f, 1f);
+        if (_verticalAim > -0.01f && _verticalAim < 0.01f)
+        {
+            _verticalAim = 0f;
+        }
+
+        animationController.SetVerticalAim(_verticalAim);
     }
 
     /// <summary> This function is responsible for movement </summary>
@@ -275,16 +324,7 @@ public class PlayerMotor : NetworkBehaviour
             if (prevCameraRotationX != currentCameraRotationX)  // Camera rotation changed
             {
                 // Set animation vertical aim
-                float _verticalAim;
-                if (currentCameraRotationX < 0)
-                {
-                    _verticalAim = -currentCameraRotationX / lookUpLimit;
-                }
-                else
-                {
-                    _verticalAim = currentCameraRotationX / lookDownLimit;
-                }
-                animationController.SetVerticalAim(_verticalAim);
+                //PerformAnimationVerticalAim();
 
                 // Apply third person rotation to camera
                 // Would it be cheaper if we just assign camera.main.transform.position/rotation instead of rotating twice ? Requires testing.
@@ -296,6 +336,33 @@ public class PlayerMotor : NetworkBehaviour
                     currentCameraRotationX - prevCameraRotationX);
             }
         }
+    }
+
+    // deprecated
+    private void PerformAnimationVerticalAim()
+    {
+        Vector3 _targetPosition = crosshairUI.targetPosition - crosshairUI.activeWeapon.fireLocationTransform.position;
+        float _extraAngle = Vector3.Angle(
+            _targetPosition.normalized,
+            crosshairUI.activeWeapon.fireLocationTransform.forward
+            );
+        Debug.Log("target position is: " + _targetPosition);
+        Debug.Log("current angle is: " + currentCameraRotationX);
+        Debug.Log("extra angle is: " + _extraAngle);
+
+
+        float _verticalAim;
+        if (currentCameraRotationX < 0)
+        {
+            _verticalAim = -currentCameraRotationX / lookUpLimit;
+        }
+        else
+        {
+            _verticalAim = currentCameraRotationX / lookDownLimit;
+        }
+
+
+        animationController.SetVerticalAim(_verticalAim);
     }
 
     /// <summary> In case of camera collision this function will take control of the camera position. </summary>

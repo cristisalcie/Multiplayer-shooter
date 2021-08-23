@@ -19,6 +19,6 @@ public class Weapon : MonoBehaviour
         ammo = 15000;
         projectileLife = 10.0f;
         cooldown = 0.05f;
-        range = 200;
+        range = 300;
     }
 }

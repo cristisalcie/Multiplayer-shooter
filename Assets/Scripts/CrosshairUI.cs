@@ -14,7 +14,11 @@ public class CrosshairUI : MonoBehaviour
     private RectTransform canvasRectTransform;
     private Vector2 middleOfScreen;
 
-    public Weapon activeWeapon;
+    public Weapon activeWeapon;  // Needs to be public to have it set by PlayerShoot script
+
+    public Vector3 targetPosition;
+
+    public GameObject hitboxParent;  // Needs to be public to have it set by PlayerShoot script
 
     private void Awake()
     {
@@ -52,13 +56,16 @@ public class CrosshairUI : MonoBehaviour
     private Vector2 CalculateNewCanvasPosition()
     {
         Vector2 _newPosition = middleOfScreen;
+        targetPosition = Vector3.zero;
 
         // Raycast from camera straight in the middle of the screen
+        hitboxParent.SetActive(false);
         bool _cameraHasHit = Physics.Raycast(
                 Camera.main.transform.position,
                 Camera.main.transform.forward,
                 out RaycastHit _cameraHitInfo,
                 activeWeapon.range);
+        hitboxParent.SetActive(true);
         {
             //Debug.DrawRay(
             //    Camera.main.transform.position,
@@ -68,29 +75,26 @@ public class CrosshairUI : MonoBehaviour
         }
         if (_cameraHasHit)
         {
-            if (!IsMe(_cameraHitInfo.transform.root.GetComponent<PlayerScript>()))
+            targetPosition = _cameraHitInfo.point;  // Wanted position to convert to UI space
+
+            // Following linecast is for the case when camera hits the ground but the weapon hits an object
+            bool _weaponHasHit = Physics.Linecast(
+                activeWeapon.fireLocationTransform.position,
+                _cameraHitInfo.point,
+                out RaycastHit _weaponHitInfo);
             {
-                Vector3 _targetPosition = _cameraHitInfo.point;  // Wanted position to convert to UI space
-
-                // Following linecast is for the case when camera hits the ground but the weapon hits an object
-                bool _weaponHasHit = Physics.Linecast(
-                    activeWeapon.fireLocationTransform.position,
-                    _cameraHitInfo.point,
-                    out RaycastHit _weaponHitInfo);
-                {
-                    //Debug.DrawLine(
-                    //    activeWeapon.weaponFireTransform.position,
-                    //    _cameraHitInfo.point,
-                    //    Color.red,
-                    //    3f);
-                }
-
-                if (_weaponHasHit)
-                {
-                    _targetPosition = _weaponHitInfo.point;
-                }
-                _newPosition = WorldToCanvasPosition(_targetPosition);
+                //Debug.DrawLine(
+                //    activeWeapon.weaponFireTransform.position,
+                //    _cameraHitInfo.point,
+                //    Color.red,
+                //    3f);
             }
+
+            if (_weaponHasHit)
+            {
+                targetPosition = _weaponHitInfo.point;
+            }
+            _newPosition = WorldToCanvasPosition(targetPosition);
         }
         else
         {
@@ -110,10 +114,9 @@ public class CrosshairUI : MonoBehaviour
 
             if (_weaponHasHit)
             {
-
-                _newPosition = WorldToCanvasPosition(_weaponHitInfo.point);
+                targetPosition = _weaponHitInfo.point;
+                _newPosition = WorldToCanvasPosition(targetPosition);
             }
-
         }
 
         if (Mathf.Abs(middleOfScreen.x - _newPosition.x) <= frameRectTransform.sizeDelta.x
@@ -123,11 +126,6 @@ public class CrosshairUI : MonoBehaviour
         }
 
         return _newPosition;
-    }
-
-    private bool IsMe(PlayerScript _ps)
-    {
-        return _ps && _ps.hasAuthority;
     }
     
     private Vector2 WorldToCanvasPosition(Vector3 _targetPosition)

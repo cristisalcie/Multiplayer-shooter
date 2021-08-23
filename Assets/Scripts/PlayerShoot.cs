@@ -9,7 +9,7 @@ public class PlayerShoot : NetworkBehaviour
     private CrosshairUI crosshairUI;
     private PlayerAnimationStateController animationController;
     private MatchScript matchScript;
-    private GameObject hitBoxParent;
+    private GameObject hitboxParent;
 
     [SerializeField]
     private int selectedWeaponLocal;
@@ -31,7 +31,14 @@ public class PlayerShoot : NetworkBehaviour
         playerState = GetComponent<PlayerState>();
         animationController = GetComponent<PlayerAnimationStateController>();
         matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
-        hitBoxParent = transform.Find("Root").gameObject;
+        
+        hitboxParent = transform.Find("Root").gameObject;
+
+        GameObject _canvas = GameObject.Find("Canvas");
+        canvasInGameHUD = _canvas.GetComponent<CanvasInGameHUD>();
+        crosshairUI = _canvas.GetComponent<CrosshairUI>();
+
+        crosshairUI.hitboxParent = hitboxParent;
 
         selectedWeaponLocal = 1;
         activeWeaponSynced = 1;
@@ -47,9 +54,6 @@ public class PlayerShoot : NetworkBehaviour
         // Enable only the selected one
         weaponArray[selectedWeaponLocal].SetActive(true);
 
-        GameObject _canvas = GameObject.Find("Canvas");
-        canvasInGameHUD = _canvas.GetComponent<CanvasInGameHUD>();
-        crosshairUI = _canvas.GetComponent<CrosshairUI>();
 
         if (selectedWeaponLocal < weaponArray.Length && weaponArray[selectedWeaponLocal] != null)
         {
@@ -74,7 +78,7 @@ public class PlayerShoot : NetworkBehaviour
         if (canvasInGameHUD.paused) { return; }
         if (playerState.IsDead) { return; }
 
-        hitBoxParent.SetActive(false);
+        hitboxParent.SetActive(false);
         allowShooting = !Physics.Raycast(
             ActiveWeapon.transform.position + Vector3.up * 0.04f,
             ActiveWeapon.fireLocationTransform.forward,
@@ -90,7 +94,7 @@ public class PlayerShoot : NetworkBehaviour
             Debug.Log(_hitInfo.transform.name);
         }
         crosshairUI.DisplayX(allowShooting);
-        hitBoxParent.SetActive(true);
+        hitboxParent.SetActive(true);
     }
 
     private void OnWeaponChanged(int _Old, int _New)
@@ -198,13 +202,13 @@ public class PlayerShoot : NetworkBehaviour
             canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo);
 
             // Calculate raycast from camera to match with crosshair location, see what/who it hits and then sync to everyone
-            hitBoxParent.SetActive(false);
+            hitboxParent.SetActive(false);
             bool _hasHit = Physics.Raycast(
                 Camera.main.transform.position,
                 Camera.main.transform.forward,
                 out RaycastHit _hitInfo,
                 ActiveWeapon.range);
-            hitBoxParent.SetActive(true);
+            hitboxParent.SetActive(true);
 
             Vector3 _bulletDir;
             if (_hasHit)

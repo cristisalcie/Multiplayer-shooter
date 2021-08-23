@@ -8,7 +8,7 @@ public class NailProjectile : MonoBehaviour
     private Rigidbody rb;
 
     private float movementMagnitude;  // How much projectile moves in between fixed frames
-    private Vector3 direction;
+    public Vector3 direction;
     private float life;  // Received from weapon script
 
     private void Awake()
