@@ -1534,7 +1534,6 @@ MonoBehaviour:
   weaponArray:
   - {fileID: 975035952332927052}
   - {fileID: 5543639241106153556}
-  - {fileID: 6712078511013419227}
   activeWeaponSynced: 0
 --- !u!114 &2613050677882900542
 MonoBehaviour:
@@ -2154,6 +2153,7 @@ MonoBehaviour:
   projectile: {fileID: 7751917299836629062, guid: 549f7d2ca9d6410418676071a81c129f,
     type: 3}
   fireLocationTransform: {fileID: 7895800693002589374}
+  muzzleFlash: {fileID: 0}
 --- !u!1 &6721815610407703624
 GameObject:
   m_ObjectHideFlags: 0

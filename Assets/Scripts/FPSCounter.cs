@@ -1,7 +1,7 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 
+// Simply drag this script on a GameObject (preferable on a canvas child object)
 [RequireComponent(typeof(Text))]
 public class FPSCounter : MonoBehaviour
 {

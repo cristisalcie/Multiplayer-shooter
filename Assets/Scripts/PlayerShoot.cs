@@ -170,8 +170,9 @@ public class PlayerShoot : NetworkBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            selectedWeaponLocal = 2;
-            CmdChangeActiveWeapon(selectedWeaponLocal);
+            // Weapon not properly implemented
+            //selectedWeaponLocal = 2;
+            //CmdChangeActiveWeapon(selectedWeaponLocal);
         }
         return selectedWeaponLocal;
     }

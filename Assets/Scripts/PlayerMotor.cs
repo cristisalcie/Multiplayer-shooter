@@ -349,7 +349,7 @@ public class PlayerMotor : NetworkBehaviour
 
         if (_hitObj)
         {
-            float _clipOffset = 0.2f;
+            float _clipOffset = 0.3f;
             Vector3 _desiredPosition = _hitInfo.point + _hitInfo.normal * _clipOffset;
             if (Camera.main.transform.position != _desiredPosition)
             {
