@@ -66,13 +66,7 @@ public class CrosshairUI : MonoBehaviour
                 out RaycastHit _cameraHitInfo,
                 activeWeapon.range);
         hitboxParent.SetActive(true);
-        {
-            //Debug.DrawRay(
-            //    Camera.main.transform.position,
-            //    Camera.main.transform.forward * activeWeapon.weaponRange,
-            //    Color.yellow,
-            //    3f);
-        }
+
         if (_cameraHasHit)
         {
             targetPosition = _cameraHitInfo.point;  // Wanted position to convert to UI space
@@ -82,13 +76,6 @@ public class CrosshairUI : MonoBehaviour
                 activeWeapon.fireLocationTransform.position,
                 _cameraHitInfo.point,
                 out RaycastHit _weaponHitInfo);
-            {
-                //Debug.DrawLine(
-                //    activeWeapon.weaponFireTransform.position,
-                //    _cameraHitInfo.point,
-                //    Color.red,
-                //    3f);
-            }
 
             if (_weaponHasHit)
             {
@@ -104,13 +91,6 @@ public class CrosshairUI : MonoBehaviour
                 Camera.main.transform.forward,
                 out RaycastHit _weaponHitInfo,
                 activeWeapon.range);
-            {
-                //Debug.DrawRay(
-                //    activeWeapon.weaponFireTransform.position,
-                //    Camera.main.transform.forward,
-                //    Color.red,
-                //    3f);
-            }
 
             if (_weaponHasHit)
             {

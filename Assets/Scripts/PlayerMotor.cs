@@ -24,6 +24,7 @@ public class PlayerMotor : NetworkBehaviour
     private float currentCameraRotationX;
     private float rotationMultiplier;
     private Vector3 cameraOffset;
+    private Vector3 cameraOffsetAlignedXY = new Vector3(0.095f, 1.35f, 0);  // Aligned both horizontal and vertical 
     [SerializeField]
     private float lookUpLimit;
     [SerializeField]
@@ -175,54 +176,8 @@ public class PlayerMotor : NetworkBehaviour
         ApplyGravity();
         PerformJump();
         FixCameraTransform();
+        PerformAnimationVerticalAim();
         UpdateGrounded();
-
-        Vector3 _targetPosition = crosshairUI.targetPosition - crosshairUI.activeWeapon.fireLocationTransform.position;
-        //Debug.DrawLine(
-        //    crosshairUI.activeWeapon.fireLocationTransform.position,
-        //    crosshairUI.targetPosition,
-        //    Color.yellow
-        //    );
-        //Debug.DrawRay(
-        //    crosshairUI.activeWeapon.fireLocationTransform.position,
-        //    crosshairUI.activeWeapon.fireLocationTransform.forward * _targetPosition.magnitude,
-        //    Color.magenta
-        //    );
-        Vector3 _startPosition = transform.position + new Vector3(0.095f, 1.35f, 0);  // Aligned both horizontal and vertical
-        Debug.DrawRay(
-            _startPosition,
-            (crosshairUI.targetPosition - _startPosition).normalized,
-            Color.magenta
-            );
-        //Debug.DrawLine(
-        //    _startPosition,
-        //    crosshairUI.targetPosition,
-        //    Color.blue
-        //    );
-        Debug.DrawRay(
-            _startPosition,
-            transform.forward,
-            Color.green
-            );
-        Debug.Log(Vector3.Angle((crosshairUI.targetPosition - _startPosition).normalized, transform.forward));
-        float _needAngle = Vector3.Angle((crosshairUI.targetPosition - _startPosition).normalized, transform.forward);
-
-        float _verticalAim;
-        if (crosshairUI.targetPosition.y < _startPosition.y)
-        {
-            _verticalAim = _needAngle / lookDownLimit;
-        }
-        else
-        {
-            _verticalAim = _needAngle / lookUpLimit;
-        }
-        _verticalAim = Mathf.Clamp(_verticalAim, -1f, 1f);
-        if (_verticalAim > -0.01f && _verticalAim < 0.01f)
-        {
-            _verticalAim = 0f;
-        }
-
-        animationController.SetVerticalAim(_verticalAim);
     }
 
     /// <summary> This function is responsible for movement </summary>
@@ -323,9 +278,6 @@ public class PlayerMotor : NetworkBehaviour
 
             if (prevCameraRotationX != currentCameraRotationX)  // Camera rotation changed
             {
-                // Set animation vertical aim
-                //PerformAnimationVerticalAim();
-
                 // Apply third person rotation to camera
                 // Would it be cheaper if we just assign camera.main.transform.position/rotation instead of rotating twice ? Requires testing.
                 Camera.main.transform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
@@ -338,29 +290,28 @@ public class PlayerMotor : NetworkBehaviour
         }
     }
 
-    // deprecated
+    /// <summary> Mouse rotates camera that rotates crosshair and crosshair rotates animation. </summary>
     private void PerformAnimationVerticalAim()
     {
-        Vector3 _targetPosition = crosshairUI.targetPosition - crosshairUI.activeWeapon.fireLocationTransform.position;
-        float _extraAngle = Vector3.Angle(
-            _targetPosition.normalized,
-            crosshairUI.activeWeapon.fireLocationTransform.forward
-            );
-        Debug.Log("target position is: " + _targetPosition);
-        Debug.Log("current angle is: " + currentCameraRotationX);
-        Debug.Log("extra angle is: " + _extraAngle);
-
-
+        Vector3 _startPosition = transform.position + cameraOffsetAlignedXY;
+        float _targetAngle = Vector3.Angle((crosshairUI.targetPosition - _startPosition).normalized, transform.forward);
         float _verticalAim;
-        if (currentCameraRotationX < 0)
+
+        if (crosshairUI.targetPosition.y < _startPosition.y)
         {
-            _verticalAim = -currentCameraRotationX / lookUpLimit;
+            _verticalAim = _targetAngle / lookDownLimit;
         }
         else
         {
-            _verticalAim = currentCameraRotationX / lookDownLimit;
+            _verticalAim = _targetAngle / lookUpLimit;
         }
+        _verticalAim = Mathf.Clamp(_verticalAim, -1f, 1f);
 
+        // Small optimization for blend tree
+        if (_verticalAim > -0.01f && _verticalAim < 0.01f)
+        {
+            _verticalAim = 0f;
+        }
 
         animationController.SetVerticalAim(_verticalAim);
     }

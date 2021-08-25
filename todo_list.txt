@@ -4,7 +4,7 @@ Make server use the same ScoreboardScript for storing the scoreboard.
 
 Fix the vertical movement. If we had initial air velocity positive going upwards then
 even if all of the sudden we get isGrounded true we should still continue our 
-movement up.
+movement up. (Just rewrite and restructure all movement)
 
 On respawn reset ammo back to initial value
 

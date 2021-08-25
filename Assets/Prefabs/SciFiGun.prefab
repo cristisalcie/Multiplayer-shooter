@@ -125,11 +125,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9d77a5204d1c6047b4dce0cea6026d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponBulletSpeed: 0
-  weaponBulletLife: 0
-  weaponAmmo: 0
-  weaponCooldown: 0
-  weaponRange: 0
-  weaponBullet: {fileID: 4637210344688469342, guid: b6ec56a89f93ce14c95883effa3576c8,
+  projectileSpeed: 0
+  projectileLife: 0
+  ammo: 0
+  cooldown: 0
+  range: 0
+  projectile: {fileID: 0}
+  fireLocationTransform: {fileID: 0}
+  muzzleFlash: {fileID: 8497698860596437332, guid: 4fa3531006296c645a751e2f5b021a09,
     type: 3}
-  weaponFireTransform: {fileID: 3651376612178402304}

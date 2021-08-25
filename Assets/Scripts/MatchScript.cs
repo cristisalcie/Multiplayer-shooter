@@ -1,6 +1,5 @@
 using System.Collections;
 using Mirror;
-using System;
 using UnityEngine;
 
 public class MatchScript : NetworkBehaviour

@@ -11,6 +11,7 @@ public class PlayerAnimationStateController : NetworkBehaviour
     private float velocityX;
     private float velocityZ;
     private float verticalAim;
+    private float moveSpeed;
     private bool isShooting;
     private bool isGrounded;
     private bool isDead;
@@ -18,6 +19,7 @@ public class PlayerAnimationStateController : NetworkBehaviour
     private int velocityXHash;
     private int velocityZHash;
     private int verticalAimHash;
+    private int moveSpeedHash;
     private int isGroundedHash;
     private int isShootingHash;
     private int isDeadHash;
@@ -30,6 +32,7 @@ public class PlayerAnimationStateController : NetworkBehaviour
         velocityX = 0.0f;
         velocityZ = 0.0f;
         verticalAim = 0.0f;
+        moveSpeed = 1.0f;
         isShooting = false;
         isGrounded = false;
         isDead = false;
@@ -40,6 +43,7 @@ public class PlayerAnimationStateController : NetworkBehaviour
         velocityXHash = Animator.StringToHash("velocityX");
         velocityZHash = Animator.StringToHash("velocityZ");
         verticalAimHash = Animator.StringToHash("verticalAim");
+        moveSpeedHash = Animator.StringToHash("moveSpeed");
         isGroundedHash = Animator.StringToHash("isGrounded");
         isShootingHash = Animator.StringToHash("isShooting");
         isDeadHash = Animator.StringToHash("isDead");
@@ -108,6 +112,19 @@ public class PlayerAnimationStateController : NetworkBehaviour
             isDead = _isDead;
             // Set in animator
             playerAnimator.SetBool(isDeadHash, isDead);
+        }
+    }
+
+    /// <summary> Already running in a ClientRpc in PlayerShoot, hence synchronization already done </summary>
+    /// <param name="_moveSpeed"> New value </param>
+    public void SetMoveSpeed(float _moveSpeed)
+    {
+        if (_moveSpeed != moveSpeed)
+        {
+            // Make change
+            moveSpeed = _moveSpeed;
+            // Set in animator
+            playerAnimator.SetFloat(moveSpeedHash, moveSpeed);
         }
     }
 

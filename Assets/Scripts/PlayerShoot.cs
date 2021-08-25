@@ -5,6 +5,7 @@ using System;
 public class PlayerShoot : NetworkBehaviour
 {
     private PlayerState playerState;
+    GameObject canvas;
     private CanvasInGameHUD canvasInGameHUD;
     private CrosshairUI crosshairUI;
     private PlayerAnimationStateController animationController;
@@ -34,11 +35,8 @@ public class PlayerShoot : NetworkBehaviour
         
         hitboxParent = transform.Find("Root").gameObject;
 
-        GameObject _canvas = GameObject.Find("Canvas");
-        canvasInGameHUD = _canvas.GetComponent<CanvasInGameHUD>();
-        crosshairUI = _canvas.GetComponent<CrosshairUI>();
-
-        crosshairUI.hitboxParent = hitboxParent;
+        canvas = GameObject.Find("Canvas");
+        canvasInGameHUD = canvas.GetComponent<CanvasInGameHUD>();
 
         selectedWeaponLocal = 1;
         activeWeaponSynced = 1;
@@ -58,7 +56,6 @@ public class PlayerShoot : NetworkBehaviour
         if (selectedWeaponLocal < weaponArray.Length && weaponArray[selectedWeaponLocal] != null)
         {
             ActiveWeapon = weaponArray[selectedWeaponLocal].GetComponent<Weapon>();
-            crosshairUI.activeWeapon = ActiveWeapon;
         }
         weaponCooldownTime = 0;
         weaponShootingNoiseValue = 0;
@@ -68,7 +65,15 @@ public class PlayerShoot : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
+
         canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo);
+
+        if (hasAuthority)
+        {
+            crosshairUI = canvas.GetComponent<CrosshairUI>();
+            crosshairUI.hitboxParent = hitboxParent;
+            crosshairUI.activeWeapon = ActiveWeapon;
+        }
     }
 
     private void FixedUpdate()
@@ -84,15 +89,7 @@ public class PlayerShoot : NetworkBehaviour
             ActiveWeapon.fireLocationTransform.forward,
             out RaycastHit _hitInfo,
             0.85f); // Last argument stands for range (in this case how long the weapon is)
-        Debug.DrawRay(
-            ActiveWeapon.transform.position + Vector3.up * 0.04f,
-            ActiveWeapon.fireLocationTransform.forward * 0.85f,
-            Color.red,
-            0.1f);
-        if (!allowShooting)
-        {
-            Debug.Log(_hitInfo.transform.name);
-        }
+
         crosshairUI.DisplayX(allowShooting);
         hitboxParent.SetActive(true);
     }
@@ -113,6 +110,16 @@ public class PlayerShoot : NetworkBehaviour
             {
                 ActiveWeapon = weaponArray[activeWeaponSynced].GetComponent<Weapon>();
                 if (isLocalPlayer) { canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo); }
+            }
+
+            // Handle animation move speed
+            if (_New == 0)
+            {
+                animationController.SetMoveSpeed(1.4f);
+            }
+            else
+            {
+                animationController.SetMoveSpeed(1.2f);
             }
         }
 
@@ -250,8 +257,12 @@ public class PlayerShoot : NetworkBehaviour
     {
         // todo: audio play, draw/instantiate visual effects
         //bulletAudio.Play(); muzzleflash  etc
+
+        // MuzzleFlash
+        Instantiate(ActiveWeapon.muzzleFlash, ActiveWeapon.fireLocationTransform.position, Quaternion.LookRotation(-_projectileDir, -_projectileDir));
+
         GameObject _projectile = Instantiate(ActiveWeapon.projectile, ActiveWeapon.fireLocationTransform.position, ActiveWeapon.fireLocationTransform.rotation);
-        _projectile.GetComponent<NailProjectile>().Setup(gameObject, ActiveWeapon.projectileLife, ActiveWeapon.projectileSpeed, _projectileDir);
+        StartCoroutine(_projectile.GetComponent<NailProjectile>().Setup(gameObject, ActiveWeapon.projectileLife, ActiveWeapon.projectileSpeed, _projectileDir));
     }
 
     #endregion
