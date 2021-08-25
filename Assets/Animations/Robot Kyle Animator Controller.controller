@@ -390,7 +390,7 @@ BlendTree:
   m_Name: Run Backward vertical aim
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: e2c6ab7694bc74948ad9e8508a7fe308, type: 2}
+    m_Motion: {fileID: 7400000, guid: fbdba606674169845b86fbabf7ffb5f8, type: 2}
     m_Threshold: -1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -406,7 +406,7 @@ BlendTree:
     m_DirectBlendParameter: velocityX
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 5f171ad6aa4d3964abe09efe33bddf53, type: 2}
+    m_Motion: {fileID: 7400000, guid: 117ff84c66a0a4b4bbc0dde1336e6e4d, type: 2}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -587,7 +587,7 @@ BlendTree:
   m_Name: Strafe Right vertical aim
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 7b5344db2b5d96b4aae1213b39506403, type: 2}
+    m_Motion: {fileID: 7400000, guid: b62ae379bf50ab544a73c2ab175f28f6, type: 2}
     m_Threshold: -1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -603,7 +603,7 @@ BlendTree:
     m_DirectBlendParameter: velocityX
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 4488006fc0866f94f9f67b8af1c7c7b7, type: 2}
+    m_Motion: {fileID: 7400000, guid: 5fb3f57b4e32bfa4d8c13e9fd6d36a43, type: 2}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -906,7 +906,7 @@ BlendTree:
   m_Name: Strafe Left vertical aim
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: bd33b37c93a9c5f41a7f1fbade99c283, type: 2}
+    m_Motion: {fileID: 7400000, guid: 281a7934cf2e1024bbce9a5510ca4c07, type: 2}
     m_Threshold: -1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -922,7 +922,7 @@ BlendTree:
     m_DirectBlendParameter: velocityX
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: dff6b2d56ab795f4c82ae425ad23f745, type: 2}
+    m_Motion: {fileID: 7400000, guid: 3960ed1b1067eab4c9fd329c4f4e4df1, type: 2}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -1059,7 +1059,7 @@ BlendTree:
   m_Name: Run Forward vertical aim
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 096caee06d257e2498c53b72f3dd01b6, type: 2}
+    m_Motion: {fileID: 7400000, guid: 74e3b1eaf8064c84898049852bbb30c1, type: 2}
     m_Threshold: -1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -1075,7 +1075,7 @@ BlendTree:
     m_DirectBlendParameter: velocityX
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: f39bab30f7052184c97d3dfe9ee37dd9, type: 2}
+    m_Motion: {fileID: 7400000, guid: 7ed67ca245e25d942ae4090411b80a90, type: 2}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1

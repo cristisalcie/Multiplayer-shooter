@@ -190,18 +190,6 @@ public class PlayerScript : NetworkBehaviour
             // Handle camera movement (will rotate on vertical axis)
             playerMotion.MoveCamera(lookSensitivityV);
         }
-
-        // Test scoreboard sorting by having a way of increasing kills/deaths for a player
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            //Camera.main.transform.SetParent(null);
-            CmdIncreaseKillTestFunc();
-        }
-        if (Input.GetKeyDown(KeyCode.L))
-        {
-            //Camera.main.transform.SetParent(transform);
-            CmdIncreaseDeathTestFunc();
-        }
     }
 
     public void StartForceRespawn()

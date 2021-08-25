@@ -203,7 +203,6 @@ public class GameNetworkManager : NetworkManager
                 _playerScript.RpcRemoveFromScoreboard(_dcPlayerUniqueId);
             }
         }
-
         base.OnServerDisconnect(conn);
     }
 

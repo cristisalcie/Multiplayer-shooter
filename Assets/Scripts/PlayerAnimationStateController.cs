@@ -4,6 +4,7 @@ using UnityEngine;
 public class PlayerAnimationStateController : NetworkBehaviour
 {
     private Animator playerAnimator;
+    private CanvasInGameHUD canvasInGameHUD;
 
     private float acceleration;
     private float deceleration;
@@ -27,6 +28,8 @@ public class PlayerAnimationStateController : NetworkBehaviour
     private void Awake()
     {
         playerAnimator = GetComponent<Animator>();
+        canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
+
         acceleration = 5.0f;
         deceleration = 4.0f;
         velocityX = 0.0f;
@@ -36,10 +39,7 @@ public class PlayerAnimationStateController : NetworkBehaviour
         isShooting = false;
         isGrounded = false;
         isDead = false;
-    }
 
-    private void Start()
-    {
         velocityXHash = Animator.StringToHash("velocityX");
         velocityZHash = Animator.StringToHash("velocityZ");
         verticalAimHash = Animator.StringToHash("verticalAim");
@@ -149,8 +149,19 @@ public class PlayerAnimationStateController : NetworkBehaviour
 
     private void MoveForwardBackward()
     {
-        bool _forwardPressed = Input.GetKey(KeyCode.W);
-        bool _backwardPressed = Input.GetKey(KeyCode.S);
+        bool _forwardPressed;
+        bool _backwardPressed;
+
+        if (canvasInGameHUD.paused)
+        {
+            _forwardPressed = false;
+            _backwardPressed = false;
+        }
+        else
+        {
+            _forwardPressed = Input.GetKey(KeyCode.W);
+            _backwardPressed = Input.GetKey(KeyCode.S);
+        }
         float _velocityZ = velocityZ;
 
         // Forward/Backward animation implementation
@@ -188,8 +199,19 @@ public class PlayerAnimationStateController : NetworkBehaviour
 
     private void MoveLeftRight()
     {
-        bool _leftPressed = Input.GetKey(KeyCode.A);
-        bool _rightPressed = Input.GetKey(KeyCode.D);
+        bool _leftPressed;
+        bool _rightPressed;
+
+        if (canvasInGameHUD.paused)
+        {
+            _leftPressed = false;
+            _rightPressed = false;
+        }
+        else
+        {
+            _leftPressed = Input.GetKey(KeyCode.A);
+            _rightPressed = Input.GetKey(KeyCode.D);
+        }
         float _velocityX = velocityX;
 
         // Left/Right animation implementation

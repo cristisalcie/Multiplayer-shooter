@@ -7,6 +7,7 @@ public class PlayerMotor : NetworkBehaviour
     private PlayerAnimationStateController animationController;
     private CharacterController charCtrl;
     private CrosshairUI crosshairUI;
+    private CanvasInGameHUD canvasInGameHUD;
 
     #region Movement variables/constants
 
@@ -65,7 +66,9 @@ public class PlayerMotor : NetworkBehaviour
     private void Awake()
     {
         animationController = GetComponent<PlayerAnimationStateController>();
-        crosshairUI = GameObject.Find("Canvas").GetComponent<CrosshairUI>();
+        GameObject _canvas = GameObject.Find("Canvas");
+        crosshairUI = _canvas.GetComponent<CrosshairUI>();
+        canvasInGameHUD = _canvas.GetComponent<CanvasInGameHUD>();
 
         #region Initialize Character Controller
 
@@ -161,6 +164,8 @@ public class PlayerMotor : NetworkBehaviour
         // In other words if we don't have authority to move this player return
         if (!hasAuthority || !isLocalPlayer) { return; }
         if (!charCtrl.enabled) { return; }
+        if (canvasInGameHUD.paused) { return; }
+
         PerformMovement();
         PerformRotation();
         PerformCameraRotation();

@@ -84,13 +84,20 @@ public class CanvasLobbyHUD : MonoBehaviour
 
     public void SetupCanvas()
     {
-        // Here we will dump majority of the canvas UI that may be changed.
+        // Unlock cursor and set it to be visible
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         if (!NetworkClient.isConnected && !NetworkServer.active)
         {
             if (NetworkClient.active)
             {
                 PanelStart.SetActive(false);
                 clientText.text = "Connecting to " + GameNetworkManager.singleton.networkAddress + "..";
+
+                // Lock cursor and set it to be invisible
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
             else
             {
