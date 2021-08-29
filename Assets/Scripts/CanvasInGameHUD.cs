@@ -41,8 +41,10 @@ public class CanvasInGameHUD : MonoBehaviour
 
     public GameObject chatMessage;
 
+    public GameObject crosshair;
+
     [SerializeField]
-    private GameObject crosshair;
+    private GameObject hitVisualEffect;
 
     #region Text variables/constants
 
@@ -372,5 +374,11 @@ public class CanvasInGameHUD : MonoBehaviour
     public void HideMatchWinnerPanel()
     {
         panelMatchWinner.SetActive(false);
+    }
+
+    public void InstantiateVisualHitNotification()
+    {
+        GameObject _hitEffect = Instantiate(hitVisualEffect, transform);
+        Destroy(_hitEffect, 0.5f);
     }
 }

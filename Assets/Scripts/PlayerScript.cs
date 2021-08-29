@@ -203,6 +203,7 @@ public class PlayerScript : NetworkBehaviour
         {
             CharacterController charCtrl = GetComponent<CharacterController>();
             Camera.main.transform.SetParent(null);  // Give camera to scene
+            canvasInGameHUD.crosshair.SetActive(false);
 
             /* Since we are interpolating the position from NetworkTransform we disable Character Controller
              * to make sure we will not interpolate quickly to spawnpoint and then back at death location. */
@@ -222,6 +223,7 @@ public class PlayerScript : NetworkBehaviour
             Camera.main.transform.SetParent(transform);  // Give camera back to our player
             charCtrl.Move(Vector3.zero);
 
+            canvasInGameHUD.crosshair.SetActive(true);
             playerState.CmdRespawnPlayer();  // This will reset healthPoints
         }
         else
@@ -300,39 +302,38 @@ public class PlayerScript : NetworkBehaviour
 
         // TODO: uncomment this before finishing project
         // Get the match state and make a decision based on it.
-        //if (NetworkServer.connections.Count < 2)  // Minimum players to start match
-        ////if (NetworkServer.connections.Count < 1)  // Minimum players to start match
-        //{
-        //    // In here we know we are the first player to join this game
-        //    matchScript.OnServerWaitForPlayers(netIdentity.connectionToClient);
-        //}
-        //else
-        //{
-        //    // Check if the match has started and we finished showing the display sequence
-        //    if (matchScript.MatchStarted && !matchScript.preparingMatch)
-        //    {
-        //        // If it did, update matchStarted boolean on this client then spawn and play
-        //        matchScript.TargetUpdateMatchStarted(netIdentity.connectionToClient, true);
+        if (NetworkServer.connections.Count < 2)  // Minimum players to start match
+        {
+            // In here we know we are the first player to join this game
+            matchScript.OnServerWaitForPlayers(netIdentity.connectionToClient);
+        }
+        else
+        {
+            // Check if the match has started and we finished showing the display sequence
+            if (matchScript.MatchStarted && !matchScript.preparingMatch)
+            {
+                // If it did, update matchStarted boolean on this client then spawn and play
+                matchScript.TargetUpdateMatchStarted(netIdentity.connectionToClient, true);
 
-        //        if (matchScript.preparingFinish)
-        //        {
-        //            // The match has also finished (player joined at the end)
-        //            matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (matchScript.preparingFinish)
-        //        {
-        //            matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
-        //        }
-        //        else
-        //        {
-        //            // If it did NOT, get the current countdown and display the appropiate panel
-        //            matchScript.OnServerPrepareToStart(netIdentity.connectionToClient);
-        //        }
-        //    }
-        //}
+                if (matchScript.preparingFinish)
+                {
+                    // The match has also finished (player joined at the end)
+                    matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
+                }
+            }
+            else
+            {
+                if (matchScript.preparingFinish)
+                {
+                    matchScript.OnServerMatchFinished(netIdentity.connectionToClient, null);
+                }
+                else
+                {
+                    // If it did NOT, get the current countdown and display the appropiate panel
+                    matchScript.OnServerPrepareToStart(netIdentity.connectionToClient);
+                }
+            }
+        }
     }
 
     [Command]

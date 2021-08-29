@@ -39,7 +39,7 @@ public class GameNetworkManager : NetworkManager
         base.Awake();
         scoreboardPlayerList = new List<ScoreboardData> { Capacity = maxConnections };
         playerName = null;
-        maxKills = 3;
+        maxKills = 10;
     }
 
     /// <summary>
@@ -196,7 +196,7 @@ public class GameNetworkManager : NetworkManager
                 if (NetworkServer.connections.Count == 1 && matchScript.isActiveAndEnabled)
                 {
                     // Premature win of _playerScript
-                    //matchScript.OnServerMatchFinished(_playerScript.netIdentity.connectionToClient, _playerScript.playerName);  // todo: uncomment this before finishing project
+                    matchScript.OnServerMatchFinished(_playerScript.netIdentity.connectionToClient, _playerScript.playerName);  // todo: uncomment this before finishing project
                 }
                 _playerScript.RpcReceive($"{_dcPlayerScript.playerName} disconnected", false);
                 OnServerRemoveFromScoreboard(_dcPlayerUniqueId);

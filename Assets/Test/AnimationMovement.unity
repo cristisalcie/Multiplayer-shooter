@@ -341,14 +341,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 437d68250594f524b81b15d6d555bdaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 0
   gravityConstant: 0
-  jumpHeight: 0
   isGrounded: 0
+  jumpHeight: 0
   lookSensitivityH: 0
   lookSensitivityV: 0
   cameraRotationXLimitDown: 0
   cameraRotationXLimitUp: 0
+  moveSpeed: 0
   weaponLocation: {fileID: 1503188309}
 --- !u!114 &702533415
 MonoBehaviour:

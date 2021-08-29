@@ -7,6 +7,7 @@ public class NailProjectile : MonoBehaviour
     private GameObject owner;
     private PlayerState ownerState;
     private Rigidbody rb;
+    private CanvasInGameHUD canvasInGameHUD;
 
     private float movementMagnitude;  // How much projectile moves in between fixed frames
     public Vector3 direction;
@@ -16,6 +17,7 @@ public class NailProjectile : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
         destroyTimer = 5f;  // If it didn't hit anything in 5 seconds clearly missed collisions with map border
     }
 
@@ -127,6 +129,7 @@ public class NailProjectile : MonoBehaviour
         if (_hitPlayer)
         {
             GetComponent<MeshRenderer>().enabled = false;  // Make projectile invisible
+            destroyTimer = 3.0f;
         }
 
         // Disable Rigidbody

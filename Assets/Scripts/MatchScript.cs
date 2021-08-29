@@ -28,8 +28,8 @@ public class MatchScript : NetworkBehaviour
         canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
         currentStartCountdown = 0;
         currentFinishCountdown = 0;
-        //MatchStarted = false;  // todo: Uncomment this before finishing off project
-        MatchStarted = true;  // todo: Delete this before finishing off project
+        MatchStarted = false;  // todo: Uncomment this before finishing off project
+        //MatchStarted = true;  // todo: Delete this before finishing off project
         MatchFinished = false;
         preparingMatch = false;
         preparingFinish = false;

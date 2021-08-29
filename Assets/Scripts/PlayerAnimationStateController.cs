@@ -152,7 +152,7 @@ public class PlayerAnimationStateController : NetworkBehaviour
         bool _forwardPressed;
         bool _backwardPressed;
 
-        if (canvasInGameHUD.paused)
+        if (canvasInGameHUD.blockPlayerInput)
         {
             _forwardPressed = false;
             _backwardPressed = false;
@@ -202,7 +202,7 @@ public class PlayerAnimationStateController : NetworkBehaviour
         bool _leftPressed;
         bool _rightPressed;
 
-        if (canvasInGameHUD.paused)
+        if (canvasInGameHUD.blockPlayerInput)
         {
             _leftPressed = false;
             _rightPressed = false;

@@ -285,10 +285,10 @@ public class PlayerMotor : NetworkBehaviour
             {
                 // Apply third person rotation to camera
                 // Would it be cheaper if we just assign camera.main.transform.position/rotation instead of rotating twice ? Requires testing.
-                Camera.main.transform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
+                Camera.main.transform.RotateAround(transform.position + cameraOffsetAlignedXY.y * Vector3.up,
                     transform.right,
                     currentCameraRotationX - prevCameraRotationX);
-                rawCameraTransform.RotateAround(transform.position + Vector3.up * cameraOffset.y,
+                rawCameraTransform.RotateAround(transform.position + cameraOffsetAlignedXY.y * Vector3.up,
                     transform.right,
                     currentCameraRotationX - prevCameraRotationX);
             }
@@ -336,7 +336,8 @@ public class PlayerMotor : NetworkBehaviour
             Camera.main.transform.rotation = rawCameraTransform.rotation;
         }
 
-        Vector3 _origin = transform.position + Vector3.up * cameraOffset.y;
+        //Vector3 _origin = transform.position + Vector3.up * cameraOffset.y;
+        Vector3 _origin = transform.position + cameraOffsetAlignedXY.y * Vector3.up;
         Vector3 _dir = Vector3.Normalize(rawCameraTransform.position - _origin);
 
         bool _hitObj = Physics.SphereCast(

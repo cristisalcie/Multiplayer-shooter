@@ -8,6 +8,7 @@ public class PlayerState : NetworkBehaviour
 {
     private PlayerAnimationStateController animationController;
     private CanvasInGameHUD canvasInGameHUD;
+    private HitVisualFogEffect hitVisualFogEffect;
     private MatchScript matchScript;
     
     public const uint respawnPlayerTime = 5;  // Must be >= 1
@@ -23,7 +24,11 @@ public class PlayerState : NetworkBehaviour
         spawnPoints = GameObject.Find("SpawnPoints").transform;
         animationController = GetComponent<PlayerAnimationStateController>();
         matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
-        canvasInGameHUD = GameObject.Find("Canvas").GetComponent<CanvasInGameHUD>();
+
+        GameObject _canvas = GameObject.Find("Canvas");
+        canvasInGameHUD = _canvas.GetComponent<CanvasInGameHUD>();
+        hitVisualFogEffect = _canvas.transform.Find("HitFogEffect").GetComponent<HitVisualFogEffect>();
+
         maxHealthPoints = 1000;  // Only accesed from Server at the moment
         killer = null;
     }
@@ -49,6 +54,7 @@ public class PlayerState : NetworkBehaviour
         if (isLocalPlayer)
         {
             StartCoroutine(DisplayPlayerRespawnPanel());
+            canvasInGameHUD.crosshair.SetActive(false);
 
             CharacterController charCtrl = GetComponent<CharacterController>();
             Camera.main.transform.SetParent(null);  // Give camera to scene
@@ -74,6 +80,7 @@ public class PlayerState : NetworkBehaviour
             charCtrl.Move(Vector3.zero);  // Update collision flags because they are calculated every time Move(...) is called
             Camera.main.transform.SetParent(transform);  // Give camera back to our player
 
+            canvasInGameHUD.crosshair.SetActive(true);
             // Sync state to all clients, this way we keep the server authority for HealthPoints and IsDead variables
             CmdRespawnPlayer();
         }
@@ -128,6 +135,8 @@ public class PlayerState : NetworkBehaviour
         // Have server know the values of the variables as well so it can provide them for new connections directly
         if (_targetPlayerState.IsDead) { return; }
         _targetPlayerState.HealthPoints -= _damage;
+        _targetPlayerState.TargetGetHitEffect(0.33f);
+        TargetHitEffect();
 
         if (_targetPlayerState.HealthPoints <= 0)
         {
@@ -155,19 +164,19 @@ public class PlayerState : NetworkBehaviour
 
             // TODO: uncomment this before finishing project
             // Check if the killer has won
-            //List<GameNetworkManager.ScoreboardData> _scoreboard = ((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList();
-            //foreach (GameNetworkManager.ScoreboardData _sd in _scoreboard)
-            //{
-            //    if (_sd.uniqueId == _uniqueId)
-            //    {
-            //        if (_sd.kills >= ((GameNetworkManager)GameNetworkManager.singleton).maxKills)
-            //        {
-            //            // Killer won!
-            //            matchScript.OnServerMatchFinished(netIdentity.connectionToClient, playerName);
-            //        }
-            //        break;
-            //    }
-            //}
+            List<GameNetworkManager.ScoreboardData> _scoreboard = ((GameNetworkManager)GameNetworkManager.singleton).OnServerGetScoreboardPlayerList();
+            foreach (GameNetworkManager.ScoreboardData _sd in _scoreboard)
+            {
+                if (_sd.uniqueId == _uniqueId)
+                {
+                    if (_sd.kills >= ((GameNetworkManager)GameNetworkManager.singleton).maxKills)
+                    {
+                        // Killer won!
+                        matchScript.OnServerMatchFinished(netIdentity.connectionToClient, playerName);
+                    }
+                    break;
+                }
+            }
         }
 
         // Called from target's script so we can also update the canvas health points text by just checking if localPlayer
@@ -230,6 +239,18 @@ public class PlayerState : NetworkBehaviour
     private void TargetSetKiller(string _killer)
     {
         killer = _killer;
+    }
+
+    [TargetRpc]
+    private void TargetGetHitEffect(float _value)
+    {
+        hitVisualFogEffect.Affect(_value);
+    }
+
+    [TargetRpc]
+    private void TargetHitEffect()
+    {
+        canvasInGameHUD.InstantiateVisualHitNotification();
     }
 
     #endregion
