@@ -342,7 +342,7 @@ public class PlayerMotor : NetworkBehaviour
 
         bool _hitObj = Physics.SphereCast(
             _origin,
-            0.1f,  /* Sphere radius */
+            0.32f,  /* Sphere radius */
             _dir,
             out RaycastHit _hitInfo,
             cameraToPlayerDistance,
@@ -350,7 +350,7 @@ public class PlayerMotor : NetworkBehaviour
 
         if (_hitObj)
         {
-            float _clipOffset = 0.3f;
+            float _clipOffset = 0.32f;
             Vector3 _desiredPosition = _hitInfo.point + _hitInfo.normal * _clipOffset;
             if (Camera.main.transform.position != _desiredPosition)
             {
