@@ -28,10 +28,6 @@ public class PlayerScript : NetworkBehaviour
     //public static Vector3 cameraOffset = new Vector3(0.6f, 1.35f, -2f);  // Aligned vertical
     //public static Vector3 cameraOffset = new Vector3(0.095f, 1.35f, -2f);  // Aligned both horizontal and vertical
     public static Vector3 cameraOffset = new Vector3(0.095f, 2f, -2.55f);  // Aligned horizontal
-    [SerializeField]
-    private float lookSensitivityH;
-    [SerializeField]
-    private float lookSensitivityV;
 
     #endregion
 
@@ -83,13 +79,6 @@ public class PlayerScript : NetworkBehaviour
 
         // Find PlayerState script
         playerState = GetComponent<PlayerState>();
-
-        #region Initialize camera variables/constants
-
-        lookSensitivityH = 5f;
-        lookSensitivityV = 5f;
-
-        #endregion
 
         // Set match script reference
         matchScript = GameObject.Find("SceneScriptsReferences").GetComponent<SceneScriptsReferences>().matchScript;
@@ -183,12 +172,12 @@ public class PlayerScript : NetworkBehaviour
         playerShoot.HandleShootWeaponInput();
 
         // Handle player movement and horizontal rotation
-        playerMotion.MovePlayer(moveSpeed, maxJumps, lookSensitivityH);
+        playerMotion.MovePlayer(moveSpeed, maxJumps, canvasInGameHUD.LookSensitivityH);
 
         if (Camera.main.transform.parent == transform)  // Camera is watching us => Allowed to receive input
         {
             // Handle camera movement (will rotate on vertical axis)
-            playerMotion.MoveCamera(lookSensitivityV);
+            playerMotion.MoveCamera(canvasInGameHUD.LookSensitivityV);
         }
     }
 

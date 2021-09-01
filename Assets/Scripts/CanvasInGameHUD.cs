@@ -46,6 +46,26 @@ public class CanvasInGameHUD : MonoBehaviour
     [SerializeField]
     private GameObject hitVisualEffect;
 
+    #region Mouse settings
+
+    public float LookSensitivityH { get; private set; }
+    public float LookSensitivityV { get; private set; }
+    [SerializeField]
+    private Slider sliderHorizontal;
+    [SerializeField]
+    private Slider sliderVertical;
+
+    #endregion
+
+    #region Display settings
+
+    [SerializeField]
+    private Dropdown screenModeDropdown;  // value = 0 => windowed else fullscreen
+    [SerializeField]
+    private Dropdown resolutionDropdown;
+
+    #endregion
+
     #region Text variables/constants
 
     [SerializeField]
@@ -107,6 +127,44 @@ public class CanvasInGameHUD : MonoBehaviour
 
         #endregion
 
+        #region Mouse settings initialization
+
+        LookSensitivityH = 5f;
+        LookSensitivityV = 5f;
+        sliderHorizontal.value = 5f;
+        sliderVertical.value = 5f;
+        sliderHorizontal.onValueChanged.AddListener(delegate { HorizontalSensitivityChanged(); });
+        sliderVertical.onValueChanged.AddListener(delegate { VerticalSensitivityChanged(); });
+
+        #endregion
+
+        #region Display settings initialization
+
+
+        screenModeDropdown.value = Screen.fullScreen ? 1 : 0;
+
+        if (Screen.width == 640)
+        {
+            resolutionDropdown.value = 0;
+        }
+        else if (Screen.width == 1280)
+        {
+            resolutionDropdown.value = 1;
+        }
+        else if (Screen.width == 1600)
+        {
+            resolutionDropdown.value = 2;
+        }
+        else if (Screen.width == 1920)
+        {
+            resolutionDropdown.value = 3;
+        }
+
+        screenModeDropdown.onValueChanged.AddListener(delegate { DisplaySettingsChanged(); });
+        resolutionDropdown.onValueChanged.AddListener(delegate { DisplaySettingsChanged(); });
+
+        #endregion
+
         matchWinnerText = panelMatchWinner.transform.Find("MatchWinnerText").GetComponent<Text>();
     }
 
@@ -136,6 +194,45 @@ public class CanvasInGameHUD : MonoBehaviour
 
         if (NetworkServer.active) { serverText.text = "Server: active. Transport: " + Transport.activeTransport; }
         if (NetworkClient.isConnected) { clientText.text = "Client: address=" + GameNetworkManager.singleton.networkAddress; }
+    }
+
+    private void HorizontalSensitivityChanged()
+    {
+        LookSensitivityH = sliderHorizontal.value;
+    }
+
+    private void VerticalSensitivityChanged()
+    {
+        LookSensitivityV = sliderVertical.value;
+    }
+
+    private void DisplaySettingsChanged()
+    {
+        int _width = 1280;
+        int _height = 720;
+
+        if (resolutionDropdown.value == 0)
+        {
+            _width = 640;
+            _height = 360;
+        }
+        else if (resolutionDropdown.value == 1)
+        {
+            _width = 1280;
+            _height = 720;
+        }
+        else if (resolutionDropdown.value == 2)
+        {
+            _width = 1600;
+            _height = 900;
+        }
+        else if (resolutionDropdown.value == 3)
+        {
+            _width = 1920;
+            _height = 1080;
+        }
+
+        Screen.SetResolution(_width, _height, screenModeDropdown.value != 0);
     }
 
     private void ButtonStop()
