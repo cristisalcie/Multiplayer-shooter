@@ -18,7 +18,7 @@ public class GameNetworkManager : NetworkManager
     [Tooltip("This is always set to null in Awake")]
     public string playerName;
 
-    [Tooltip("This is always set to 20 in Awake")]
+    [Tooltip("This is always set to 10 in Awake")]
     public uint maxKills;
 
     private MatchScript matchScript;
@@ -39,7 +39,7 @@ public class GameNetworkManager : NetworkManager
         base.Awake();
         scoreboardPlayerList = new List<ScoreboardData> { Capacity = maxConnections };
         playerName = null;
-        maxKills = 10;
+        maxKills = 2;
     }
 
     /// <summary>
