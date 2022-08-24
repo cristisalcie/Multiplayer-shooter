@@ -307,7 +307,7 @@ public class CanvasInGameHUD : MonoBehaviour
 
                 // Block player input
                 blockPlayerInput = true;
-            }
+            }  // Else if paused no need to do ^^ since they are already done in pause mode (see HandlePauseResumeInput())
             chatMessage.SetActive(true);
             chatMessage.GetComponent<InputField>().ActivateInputField();
 
@@ -322,7 +322,7 @@ public class CanvasInGameHUD : MonoBehaviour
 
                 // Unlock player input
                 blockPlayerInput = false;
-            }
+            }  // Else if paused no need to do ^^ since they are supposed to stay the same in pause mode (see HandlePauseResumeInput())
             chatMessage.GetComponent<InputField>().DeactivateInputField();
             chatMessage.SetActive(false);
             chatWindow.GetComponent<ChatWindow>().OnSend();
@@ -477,5 +477,14 @@ public class CanvasInGameHUD : MonoBehaviour
     {
         GameObject _hitEffect = Instantiate(hitVisualEffect, transform);
         Destroy(_hitEffect, 0.5f);
+    }
+
+    public void HideCrosshair()
+    {
+        crosshair.SetActive(false);
+    }
+    public void ShowCrosshair()
+    {
+        crosshair.SetActive(true);
     }
 }

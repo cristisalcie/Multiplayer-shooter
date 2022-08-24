@@ -21,6 +21,8 @@ public class HitVisualFogEffect : MonoBehaviour
         }
     }
 
+    // TODO: [possible optimization]
+    // TODO: Affect could start a coroutine (only if a boolean says it is not already started) looping inside of it while color has alfa.
     public void Affect(float _value)
     {
         Color _new = fogImage.color;

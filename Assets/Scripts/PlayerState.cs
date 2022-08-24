@@ -122,6 +122,7 @@ public class PlayerState : NetworkBehaviour
         IsDead = false;
         animationController.SetIsDead(false);  // Which is why we do this on the server as well.
         RpcSyncHealthPoints(HealthPoints);
+        TargetResetWeaponsAmmo();
     }
 
     [Command]
@@ -251,6 +252,13 @@ public class PlayerState : NetworkBehaviour
     private void TargetHitEffect()
     {
         canvasInGameHUD.InstantiateVisualHitNotification();
+    }
+
+    [TargetRpc]
+    private void TargetResetWeaponsAmmo()
+    {
+        PlayerShoot playerShoot = GetComponent<PlayerShoot>();
+        playerShoot.ResetWeaponsAmmo();
     }
 
     #endregion

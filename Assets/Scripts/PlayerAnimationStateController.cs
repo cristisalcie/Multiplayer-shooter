@@ -25,6 +25,8 @@ public class PlayerAnimationStateController : NetworkBehaviour
     private int isShootingHash;
     private int isDeadHash;
 
+    private int currentWeapon;
+
     private void Awake()
     {
         playerAnimator = GetComponent<Animator>();
@@ -83,6 +85,20 @@ public class PlayerAnimationStateController : NetworkBehaviour
             CmdSyncVerticalAim(_verticalAim);
         }
         // Else do nothing and save bandwidth
+    }
+
+    public void SetCurrentWeapon(int _currentWeapon)
+    {
+        currentWeapon = _currentWeapon;
+        if (currentWeapon == 0)  // Unarmed
+        {
+            playerAnimator.SetLayerWeight(0, 1);
+            playerAnimator.SetLayerWeight(1, 0);
+        } else if (currentWeapon == 1)  // Rifle
+        {
+            playerAnimator.SetLayerWeight(0, 0);
+            playerAnimator.SetLayerWeight(1, 1);
+        }
     }
 
     public void SetIsGrounded(bool _isGrounded)

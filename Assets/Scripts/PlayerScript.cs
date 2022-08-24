@@ -214,6 +214,7 @@ public class PlayerScript : NetworkBehaviour
 
             canvasInGameHUD.crosshair.SetActive(true);
             playerState.CmdRespawnPlayer();  // This will reset healthPoints
+            playerShoot.ResetWeaponsAmmo();  // This will reset ammo
         }
         else
         {

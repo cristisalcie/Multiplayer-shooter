@@ -60,6 +60,7 @@ public class PlayerShoot : NetworkBehaviour
         weaponCooldownTime = 0;
         weaponShootingNoiseValue = 0;
         allowShooting = true;
+        animationController.SetCurrentWeapon(selectedWeaponLocal);
     }
 
     public override void OnStartLocalPlayer()
@@ -121,6 +122,8 @@ public class PlayerShoot : NetworkBehaviour
             {
                 animationController.SetMoveSpeed(1.2f);
             }
+
+            animationController.SetCurrentWeapon(_New);
         }
 
         if (hasAuthority)
@@ -161,10 +164,12 @@ public class PlayerShoot : NetworkBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             selectedWeaponLocal = 0;
+            canvasInGameHUD.HideCrosshair();
             CmdChangeActiveWeapon(selectedWeaponLocal);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
+            canvasInGameHUD.ShowCrosshair();
             selectedWeaponLocal = 1;
             CmdChangeActiveWeapon(selectedWeaponLocal);
         }
@@ -232,6 +237,23 @@ public class PlayerShoot : NetworkBehaviour
                 * new Vector3(UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(-1f, 1f));
 
             CmdShootRay(_bulletDir.normalized);  // Very important to send this argument normalized
+        }
+    }
+
+    public void ResetWeaponsAmmo()
+    {
+        foreach (GameObject currentWeaponGameObject in weaponArray)
+        {
+            Weapon currentWeapon = currentWeaponGameObject.GetComponent<Weapon>();
+            if (currentWeapon != null)
+            {
+                currentWeapon.ammo = currentWeapon.totalAmmo;
+            }
+            Debug.Log(currentWeapon);
+        }
+        if (ActiveWeapon != null)
+        {
+            canvasInGameHUD.UpdateAmmoUI(ActiveWeapon.ammo);
         }
     }
 

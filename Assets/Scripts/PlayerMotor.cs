@@ -420,7 +420,7 @@ public class PlayerMotor : NetworkBehaviour
             transform.position + Vector3.up * charCtrl.height / 2f,
             Vector3.down,
             out RaycastHit _rampInfo,
-            charCtrl.height / 2f + charCtrl.skinWidth * 10f,
+            charCtrl.height / 2f + charCtrl.skinWidth * 12f,
             1 << rampLayerIndex);
 
         // The following if will make sure we don't transit between airborne and stand locomotion animations when going down a ramp

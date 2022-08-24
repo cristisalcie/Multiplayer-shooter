@@ -5,7 +5,7 @@ using UnityEngine;
 public class MatchScript : NetworkBehaviour
 {
     private CanvasInGameHUD canvasInGameHUD;
-    private PlayerScript localPlayerScript;  // Only for clients since server has 1 instance and >= 1 players.
+    private PlayerScript localPlayerScript;  // Only for local client since server has 1 instance and >= 1 players.
 
     public bool MatchStarted { get; private set; }
     public bool MatchFinished { get; private set; }
